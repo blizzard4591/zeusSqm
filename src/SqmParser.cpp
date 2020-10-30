@@ -18,16 +18,7 @@ SqmObjectList SqmParser::parse(QString const& input) const {
 }
 
 SqmObjectList SqmParser::parse(QString const& input, int offset, int length) const {
-	int const initialOffset = offset;
 	std::vector<std::shared_ptr<SqmStructure>> objects;
-
-	// Timings
-	static std::uint64_t microsecondsSpentMatchProperty = 0;
-	static std::uint64_t propertyMatchCount = 0;
-	static std::uint64_t microsecondsSpentMatchClass = 0;
-	static std::uint64_t classMatchCount = 0;
-	static std::uint64_t microsecondsSpentMatchArray = 0;
-	static std::uint64_t arrayMatchCount = 0;
 
 	static const QChar cR('\r');
 	static const QChar cN('\n');
@@ -47,10 +38,11 @@ SqmObjectList SqmParser::parse(QString const& input, int offset, int length) con
 	static const QChar cClosingBracket(']');
 	static const QChar cOpeningCurlyBracket('{');
 	static const QChar cClosingCurlyBracket('}');
+	static const QChar cSemicolon(';');
+	static const QChar cComma(',');
+	static const QChar cQuote('"');
 
 	while (offset < length) {
-		int const offsetBefore = offset;
-
 		QChar const c = input.at(offset);
 		if (c == cR || c == cN || c == cT || c == cS) {
 			++offset;
@@ -64,6 +56,19 @@ SqmObjectList SqmParser::parse(QString const& input, int offset, int length) con
 				}
 
 				QString const name = input.mid(offset + 6, posOfOpeningCurlyBracket - offset - 6).trimmed();
+				
+				int const posOfClosingCurlyBracket = findMatchingClosingCurlyBracket(input, length, posOfOpeningCurlyBracket);
+				if (posOfClosingCurlyBracket == -1) {
+					failureReport("Failed to match closing curly bracket in line LINE!", input, offset);
+				}
+
+				int innerPos = posOfOpeningCurlyBracket + 1;
+				innerPos = advanceOverLineBreaks(input, innerPos, length);
+
+				objects.push_back(std::make_shared<SqmClass>(name, parse(input, innerPos, posOfClosingCurlyBracket - 1)));
+
+				offset = posOfClosingCurlyBracket + 2;
+				offset = advanceOverLineBreaks(input, offset, length);
 			} else {
 				int const equalPos = input.indexOf(cEqual, offset);
 				if (equalPos == -1) {
@@ -85,12 +90,12 @@ SqmObjectList SqmParser::parse(QString const& input, int offset, int length) con
 					int const posOfClosingBracket = findMatchingClosingCurlyBracket(input, length, posOfOpeningBracket);
 					if (posOfClosingBracket == -1) {
 						failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
-					} else if ((posOfClosingBracket + 1) >= length || (input.at(posOfClosingBracket + 1) != ';')) {
+					} else if ((posOfClosingBracket + 1) >= length || (input.at(posOfClosingBracket + 1) != cSemicolon)) {
 						failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
 					}
 
 					QStringRef const arrayContent = input.midRef(posOfOpeningBracket + 1, posOfClosingBracket - posOfOpeningBracket - 1);
-					QVector<QStringRef> parts = arrayContent.split(',');
+					QVector<QStringRef> parts = arrayContent.split(cComma);
 					QStringList trimmedParts;
 					for (int i = 0; i < parts.size(); ++i) {
 						trimmedParts.push_back(parts.at(i).trimmed().toString());
@@ -107,17 +112,17 @@ SqmObjectList SqmParser::parse(QString const& input, int offset, int length) con
 					// Property
 					QString const name = input.mid(offset, equalPos - offset);
 					int posOfClosingSemicolon = -1;
-					if (((equalPos + 1) < length) && (input.at(equalPos + 1) == '"')) {
+					if (((equalPos + 1) < length) && (input.at(equalPos + 1) == cQuote)) {
 						int const posOfOpeningQuote = equalPos + 1;
 						int const posOfClosingQuote = findMatchingQuote(input, posOfOpeningQuote, length);
 						if (posOfClosingQuote == -1) {
 							failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
-						} else if ((posOfClosingQuote + 1) >= length || (input.at(posOfClosingQuote + 1) != ';')) {
+						} else if ((posOfClosingQuote + 1) >= length || (input.at(posOfClosingQuote + 1) != cSemicolon)) {
 							failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
 						}
 						posOfClosingSemicolon = posOfClosingQuote + 1;
 					} else {
-						posOfClosingSemicolon = input.indexOf(';', equalPos + 1);
+						posOfClosingSemicolon = input.indexOf(cSemicolon, equalPos + 1);
 						if (posOfClosingSemicolon == -1) {
 							failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
 						}
@@ -129,99 +134,9 @@ SqmObjectList SqmParser::parse(QString const& input, int offset, int length) con
 					offset = advanceOverLineBreaks(input, offset, length);
 				}
 			}
-		}
-
-		{
-			auto t1 = std::chrono::high_resolution_clock::now();
-			QRegularExpressionMatch const matchProperty = m_regExpProperty.match(input, offset, QRegularExpression::NormalMatch, QRegularExpression::AnchoredMatchOption);
-			auto t2 = std::chrono::high_resolution_clock::now();
-			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-			microsecondsSpentMatchProperty += duration;
-			++propertyMatchCount;
-			if (matchProperty.hasMatch()) {
-				QString const propertyName = matchProperty.captured(1);
-				QString const propertyValue = matchProperty.captured(2);
-
-				objects.push_back(std::make_shared<SqmProperty>(propertyName, propertyValue));
-
-				offset += matchProperty.capturedLength(0);
-				offset = advanceOverLineBreaks(input, offset, length);
-				continue;
-			}
-		}
-
-		{
-			auto t1 = std::chrono::high_resolution_clock::now();
-			QRegularExpressionMatch const matchArray = m_regExpArray.match(input, offset, QRegularExpression::NormalMatch, QRegularExpression::AnchoredMatchOption);
-			auto t2 = std::chrono::high_resolution_clock::now();
-			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-			microsecondsSpentMatchArray += duration;
-			++arrayMatchCount;
-			if (matchArray.hasMatch()) {
-				QString const arrayName = matchArray.captured(1);
-				QStringRef const arrayContent = matchArray.capturedRef(2);
-				QVector<QStringRef> parts = arrayContent.split(',');
-				QStringList trimmedParts;
-				for (int i = 0; i < parts.size(); ++i) {
-					trimmedParts.push_back(parts.at(i).trimmed().toString());
-				}
-
-				int const matchLength = matchArray.capturedLength(0);
-				bool const isMultiLine = input.midRef(offset, matchLength).count('\n') > 0;
-
-				objects.push_back(std::make_shared<SqmArray>(arrayName, trimmedParts, isMultiLine));
-
-				offset += matchLength;
-				offset = advanceOverLineBreaks(input, offset, length);
-				continue;
-			}
-		}
-
-		{
-			auto t1 = std::chrono::high_resolution_clock::now();
-			QRegularExpressionMatch const matchClass = m_regExpClass.match(input, offset, QRegularExpression::NormalMatch, QRegularExpression::AnchoredMatchOption);
-			auto t2 = std::chrono::high_resolution_clock::now();
-			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-			microsecondsSpentMatchClass += duration;
-			++classMatchCount;
-			if (matchClass.hasMatch()) {
-				QString const className = matchClass.captured(1);
-				int const matchLength = matchClass.capturedLength(0);
-
-				offset += matchLength;
-				int const posOfOpeningBracket = offset - 1;
-				int const posOfClosingBracket = findMatchingClosingCurlyBracket(input, length, posOfOpeningBracket);
-				if (posOfClosingBracket == -1) {
-					failureReport("Failed to match closing bracket in line LINE!", input, offset);
-				}
-
-				int innerPos = posOfOpeningBracket + 1;
-				innerPos = advanceOverLineBreaks(input, innerPos, length);
-
-				objects.push_back(std::make_shared<SqmClass>(className, parse(input, innerPos, posOfClosingBracket - 1)));
-
-				offset = posOfClosingBracket + 2;
-				offset = advanceOverLineBreaks(input, offset, length);
-				continue;
-			}
-		}
-
-		bool hadWhitespace = false;
-		while ((offset < length) && ((input.at(offset) == '\t') || (input.at(offset) == ' ') || (input.at(offset) == '\r') || (input.at(offset) == '\n'))) {
-			hadWhitespace = true;
-			++offset;
-		}
-
-		if (!hadWhitespace) {
+		} else {
 			failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
-		} else if (offsetBefore == offset) {
-			failureReport("Internal Error: Did not advance through input in this round. Next input is 'NEXT_INPUT' (line LINE, offset OFFSET)", input, offset);
 		}
-	}
-
-	if (initialOffset == 0) {
-		std::cout << "Spent " << microsecondsSpentMatchProperty << "us matching " << propertyMatchCount << " properties, " << microsecondsSpentMatchArray << "us matching " << arrayMatchCount << " arrays and " << microsecondsSpentMatchClass << "us matching " << classMatchCount << " classes." << std::endl;
-		std::cout << "Spent " << (microsecondsSpentMatchProperty / propertyMatchCount) << "us avg matching " << propertyMatchCount << " properties, " << (microsecondsSpentMatchArray / arrayMatchCount) << "us avg matching " << arrayMatchCount << " arrays and " << (microsecondsSpentMatchClass / classMatchCount) << "us avg matching " << classMatchCount << " classes." << std::endl;
 	}
 
 	return objects;
