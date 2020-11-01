@@ -4,10 +4,6 @@ SqmProperty::SqmProperty(QString const& name, QString const& value) : m_name(nam
 	//
 }
 
-QString const& SqmProperty::getName() const {
-	return m_name;
-}
-
 QString const& SqmProperty::getValue() const {
 	return m_value;
 }
@@ -15,4 +11,8 @@ QString const& SqmProperty::getValue() const {
 QString SqmProperty::toSqm(int indentationLevel) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
 	return QStringLiteral("%1%2=%3;\r\n").arg(indentString).arg(getName()).arg(getValue());
+}
+
+QString const& SqmProperty::getName() const {
+	return m_name;
 }

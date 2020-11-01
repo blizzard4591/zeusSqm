@@ -10,10 +10,10 @@ public:
 	SqmProperty(QString const& name, QString const& value);
 	virtual ~SqmProperty() {}
 
-	QString const& getName() const;
 	QString const& getValue() const;
 
 	virtual QString toSqm(int indentationLevel) const override;
+	virtual QString const& getName() const override;
 private:
 	QString const m_name;
 	QString const m_value;

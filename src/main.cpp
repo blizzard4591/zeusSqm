@@ -4,9 +4,11 @@
 #include <QTextStream>
 
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 
+#include "MarkerCheck.h"
 #include "SqmParser.h"
 
 int main(int argc, char *argv[]) {
@@ -15,15 +17,14 @@ int main(int argc, char *argv[]) {
 	QCoreApplication::setApplicationName("zeusSqm");
 	QCoreApplication::setApplicationVersion("1.0");
 
+
 	QCommandLineParser parser;
 	parser.setApplicationDescription("ARMA3 SQM Parser/Validator");
 	parser.addHelpOption();
 	parser.addVersionOption();
 	parser.addPositionalArgument("mission", QCoreApplication::translate("main", "Mission SQM file to read"));
 
-	// A boolean option with multiple names (-f, --force)
-	QCommandLineOption checkMarkerOption(QStringList() << "m" << "markers", QCoreApplication::translate("main", "Check marker placements."));
-	parser.addOption(checkMarkerOption);
+	MarkerCheck markerCheck(parser);
 
 	// Process the actual command line arguments given by the user
 	parser.process(app);
@@ -37,11 +38,13 @@ int main(int argc, char *argv[]) {
 		parser.showHelp(-1);
 	}
 
-	bool const checkMarkers = parser.isSet(checkMarkerOption);
-
 	QFile inputFile(args.at(0));
 	if (!inputFile.open(QFile::ReadOnly)) {
 		std::cerr << "Failed to open input file '" << args.at(0).toStdString() << "'. Terminating..." << std::endl;
+		return -1;
+	}
+
+	if (!markerCheck.checkArguments(parser)) {
 		return -1;
 	}
 
@@ -52,10 +55,12 @@ int main(int argc, char *argv[]) {
 	SqmParser sqmParser;
 
 	auto t1 = std::chrono::high_resolution_clock::now();
-	SqmObjectList sqmObjects = sqmParser.parse(missionFileData);
+	SqmObjectList<SqmStructure> sqmObjects = sqmParser.parse(missionFileData);
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 	std::cout << "Parsing SQM took " << duration << "ms." << std::endl;
+
+	markerCheck.perform(sqmObjects);
 
 	QString const rebuildMissionFileData = sqmObjects.toSqm(0);
 	QFile outputFile("debug.sqm");

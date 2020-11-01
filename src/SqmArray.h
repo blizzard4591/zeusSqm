@@ -11,10 +11,12 @@ public:
 	SqmArray(QString const& name, QStringList const& values, bool isMultiLine);
 	virtual ~SqmArray() {}
 
-	QString const& getName() const;
 	QStringList const& getValues() const;
 
 	virtual QString toSqm(int indentationLevel) const override;
+	virtual QString const& getName() const override;
+
+	float getEntryAsFloat(int index) const;
 private:
 	QString const m_name;
 	QStringList const m_values;

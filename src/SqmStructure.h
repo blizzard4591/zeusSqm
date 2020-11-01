@@ -8,6 +8,13 @@ public:
 	virtual ~SqmStructure() {}
 
 	virtual QString toSqm(int indentationLevel) const = 0;
+	virtual QString const& getName() const = 0;
+
+	enum class Type {
+		PROPERTY,
+		ARRAY,
+		CLASS
+	};
 };
 
 #endif

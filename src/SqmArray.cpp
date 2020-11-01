@@ -4,10 +4,6 @@ SqmArray::SqmArray(QString const& name, QStringList const& values, bool isMultiL
 	//
 }
 
-QString const& SqmArray::getName() const {
-	return m_name;
-}
-
 QStringList const& SqmArray::getValues() const {
 	return m_values;
 }
@@ -33,5 +29,23 @@ QString SqmArray::toSqm(int indentationLevel) const {
 		result.append(QStringLiteral("};\r\n"));
 		return result;
 	}
+}
+
+QString const& SqmArray::getName() const {
+	return m_name;
+}
+
+float SqmArray::getEntryAsFloat(int index) const {
+	if ((index < 0) || (index >= m_values.size())) {
+		throw;
+	}
+
+	bool ok = false;
+	float const result = m_values.at(index).toFloat(&ok);
+	if (!ok) {
+		throw;
+	}
+
+	return result;
 }
 

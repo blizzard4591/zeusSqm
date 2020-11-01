@@ -3,21 +3,15 @@
 #include <chrono>
 #include <iostream>
 
-SqmParser::SqmParser() : 
-	m_regExpProperty("\\s*([a-zA-Z]+)\\s*=\\s*((?:[-+]?(?:\\b[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+\\b)(?:[eE][-+]?[0-9]+\\b)?)|\"(?:[^\"]|\"\")*\");"),
-	m_regExpArray("\\s*([a-zA-Z]+)\\[\\]\\s*=\\s*{\\s*((?:(?:[-+]?(?:\\b[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+\\b)(?:[eE][-+]?[0-9]+\\b)?)|\"[^\"]*\")(?:\\s*,\\s*(?:(?:[-+]?(?:\\b[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+\\b)(?:[eE][-+]?[0-9]+\\b)?)|\"[^\"]*\"))*)?\\s*};"),
-	m_regExpClass("\\s*class ([a-zA-Z0-9]+)\\s*{") {
+SqmParser::SqmParser() {
 	//
-	m_regExpProperty.optimize();
-	m_regExpArray.optimize();
-	m_regExpClass.optimize();
 }
 
-SqmObjectList SqmParser::parse(QString const& input) const {
+SqmObjectList<SqmStructure> SqmParser::parse(QString const& input) const {
 	return parse(input, 0, input.length());
 }
 
-SqmObjectList SqmParser::parse(QString const& input, int offset, int length) const {
+SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, int length) const {
 	std::vector<std::shared_ptr<SqmStructure>> objects;
 
 	static const QChar cR('\r');
