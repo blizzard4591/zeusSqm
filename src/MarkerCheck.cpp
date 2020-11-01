@@ -97,10 +97,19 @@ std::shared_ptr<SqmObjectList<SqmStructure>> MarkerCheck::perform(std::shared_pt
 			float const yDiff = std::abs(yShouldBe - y);
 			if (((xDiff > 0.0) || (yDiff > 0.0)) && (xDiff <= markerMaxDistance) && (yDiff <= markerMaxDistance)) {
 				std::cout << "Marker at (" << x << ", " << y << ") should be moved to (" << xShouldBe << ", " << yShouldBe << ")." << std::endl;
-				// TODO: Ask for confirmation.
+				if (markerAskConfirmation) {
+					std::cout << "Perform marker relocation from (" << x << ", " << y << ") to (" << xShouldBe << ", " << yShouldBe << ")? [y/n]" << std::endl;
+					std::string userChoice;
+					std::getline(std::cin, userChoice);
+					if (userChoice.compare("y") == 0) {
+						std::shared_ptr<SqmArray> fixedPosition = std::make_shared<SqmArray>(position.setEntry(0, xShouldBe).setEntry(2, yShouldBe));
+						result = result->replace(position, fixedPosition, result);
 
-				std::shared_ptr<SqmArray> fixedPosition = std::make_shared<SqmArray>(position.setEntry(0, xShouldBe).setEntry(2, yShouldBe));
-				result = result->replace(position, fixedPosition, result);
+						std::cout << "Okay, relocated." << std::endl;
+					} else {
+						std::cout << "NOT relocated." << std::endl;
+					}
+				}
 			}
 		}
 		std::cout << "Saw " << markerCount << " markers on map." << std::endl;

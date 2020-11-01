@@ -23,6 +23,10 @@ int main(int argc, char *argv[]) {
 	parser.addHelpOption();
 	parser.addVersionOption();
 	parser.addPositionalArgument("mission", QCoreApplication::translate("main", "Mission SQM file to read"));
+	parser.addPositionalArgument("outputMission", QCoreApplication::translate("main", "Mission SQM file to write (output) when applying changes"));
+
+	QCommandLineOption inplaceOption(QStringList() << "inplace", QCoreApplication::translate("main", "Do changes inplace, i.e. write to input file. USE WITH CARE."));
+	parser.addOption(inplaceOption);
 
 	MarkerCheck markerCheck(parser);
 
@@ -34,7 +38,7 @@ int main(int argc, char *argv[]) {
 		args << "mission.sqm";
 	}
 
-	if (args.isEmpty()) {
+	if (args.isEmpty() || (args.size() < 2 && !parser.isSet(inplaceOption))) {
 		parser.showHelp(-1);
 	}
 
@@ -63,11 +67,22 @@ int main(int argc, char *argv[]) {
 	sqmObjects = markerCheck.perform(sqmObjects);
 
 	QString const rebuildMissionFileData = sqmObjects->toSqm(0);
-	QFile outputFile("debug.sqm");
-	outputFile.open(QFile::WriteOnly);
+
+	QFile outputFile;
+	if (parser.isSet(inplaceOption)) {
+		outputFile.setFileName(args.at(0));
+	} else {
+		outputFile.setFileName(args.at(1));
+	}
+
+	if (!outputFile.open(QFile::WriteOnly)) {
+		std::cerr << "Failed to open output file '" << outputFile.fileName().toStdString() << "' for writing, can not write result!" << std::endl;
+		return -5;
+	}
 	QTextStream outputStream(&outputFile);
 	outputStream << rebuildMissionFileData;
 	outputFile.close();
+	std::cout << "Saved SQM to '" << outputFile.fileName().toStdString() << "'." << std::endl;
 
 	std::cout << "Bye bye!" << std::endl;
     return 0;
