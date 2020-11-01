@@ -4,6 +4,8 @@
 #include <QCommandLineParser>
 #include <QString>
 
+#include <memory>
+
 #include "SqmObjectList.h"
 
 class MarkerCheck {
@@ -12,7 +14,7 @@ public:
 	virtual ~MarkerCheck() {}
 
 	bool checkArguments(QCommandLineParser& parser);
-	void perform(SqmObjectList<SqmStructure> const& sqmObjects);
+	std::shared_ptr<SqmObjectList<SqmStructure>> perform(std::shared_ptr<SqmObjectList<SqmStructure>> const& sqmObjects);
 private:
 	QCommandLineOption checkMarkerOption;
 	QCommandLineOption markerMaxDistanceOption;

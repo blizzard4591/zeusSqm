@@ -49,8 +49,8 @@ bool MarkerCheck::checkArguments(QCommandLineParser& parser) {
 	return true;
 }
 
-void MarkerCheck::perform(SqmObjectList<SqmStructure> const& sqmObjects) {
-	SqmObjectList<SqmStructure> result = sqmObjects;
+std::shared_ptr<SqmObjectList<SqmStructure>> MarkerCheck::perform(std::shared_ptr<SqmObjectList<SqmStructure>> const& sqmObjects) {
+	std::shared_ptr<SqmObjectList<SqmStructure>> result = sqmObjects;
 	if (checkMarkers) {
 		std::cout << "Checking marker locations..." << std::endl;
 		std::cout << "Asking for confirmation before moving: " << (markerAskConfirmation ? "yes" : "no") << std::endl;
@@ -58,7 +58,7 @@ void MarkerCheck::perform(SqmObjectList<SqmStructure> const& sqmObjects) {
 		std::cout << "Maximum distance of marker to grid-center to consider move: " << markerMaxDistance << std::endl;
 
 		std::size_t markerCount = 0;
-		SqmClass* classMission = dynamic_cast<SqmClass*>(sqmObjects.getByName(QStringLiteral("Mission")));
+		SqmClass* classMission = dynamic_cast<SqmClass*>(sqmObjects->getByName(QStringLiteral("Mission")));
 		if (classMission == nullptr) {
 			std::cerr << "FORMAT ERROR: SQM does not contain class 'Mission', is it complete/the correct file?" << std::endl;
 			throw zeusops::exceptions::FormatErrorException() << "FORMAT ERROR: SQM does not contain class 'Mission', is it complete/the correct file?";
@@ -99,10 +99,12 @@ void MarkerCheck::perform(SqmObjectList<SqmStructure> const& sqmObjects) {
 				std::cout << "Marker at (" << x << ", " << y << ") should be moved to (" << xShouldBe << ", " << yShouldBe << ")." << std::endl;
 				// TODO: Ask for confirmation.
 
-				SqmArray fixedPosition = position.setEntry(0, xShouldBe).setEntry(2, yShouldBe);
-				result = result.replace(position, fixedPosition);
+				std::shared_ptr<SqmArray> fixedPosition = std::make_shared<SqmArray>(position.setEntry(0, xShouldBe).setEntry(2, yShouldBe));
+				result = result->replace(position, fixedPosition, result);
 			}
 		}
 		std::cout << "Saw " << markerCount << " markers on map." << std::endl;
 	}
+
+	return result;
 }

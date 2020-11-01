@@ -155,7 +155,7 @@ std::vector<std::shared_ptr<T>> SqmObjectList<T>::replace(SqmStructure const& ol
 		std::shared_ptr<SqmClass> const sqmClass = std::dynamic_pointer_cast<SqmClass>(m_objects.at(i));
 		if (sqmClass != nullptr) {
 			std::shared_ptr<SqmClass> const replacedSqmClass = sqmClass->replace(old, newStructure, sqmClass);
-			std::shared_ptr<T> const downcastedReplaced = std::dynamic_pointer_cast<SqmStructure>(replacedSqmClass);
+			std::shared_ptr<T> const downcastedReplaced = std::dynamic_pointer_cast<T>(replacedSqmClass);
 			objects.push_back(downcastedReplaced);
 			if (*sqmClass != *downcastedReplaced) {
 				didChange = true;
@@ -170,8 +170,8 @@ std::vector<std::shared_ptr<T>> SqmObjectList<T>::replace(SqmStructure const& ol
 
 
 template <>
-std::vector<std::shared_ptr<SqmStructure>> SqmObjectList<SqmStructure>::replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, bool& didChange) const {
-	std::vector<std::shared_ptr<SqmStructure>> objects;
+std::vector<std::shared_ptr<SqmArray>> SqmObjectList<SqmArray>::replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, bool& didChange) const {
+	std::vector<std::shared_ptr<SqmArray>> objects;
 	didChange = false;
 	for (std::size_t i = 0; i < m_objects.size(); ++i) {
 		if (*m_objects.at(i) == old) {
@@ -184,24 +184,35 @@ std::vector<std::shared_ptr<SqmStructure>> SqmObjectList<SqmStructure>::replace(
 			continue;
 		}
 
-		std::shared_ptr<SqmClass> const sqmClass = std::dynamic_pointer_cast<SqmClass>(m_objects.at(i));
-		if (sqmClass != nullptr) {
-			std::shared_ptr<SqmClass> const replacedSqmClass = sqmClass->replace(old, newStructure, sqmClass);
-			std::shared_ptr<SqmStructure> const downcastedReplaced = std::dynamic_pointer_cast<SqmStructure>(replacedSqmClass);
-			objects.push_back(downcastedReplaced);
-			if (*sqmClass != *downcastedReplaced) {
-				didChange = true;
+		objects.push_back(m_objects.at(i));
+	}
+
+	return objects;
+}
+
+template <>
+std::vector<std::shared_ptr<SqmProperty>> SqmObjectList<SqmProperty>::replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, bool& didChange) const {
+	std::vector<std::shared_ptr<SqmProperty>> objects;
+	didChange = false;
+	for (std::size_t i = 0; i < m_objects.size(); ++i) {
+		if (*m_objects.at(i) == old) {
+			std::shared_ptr<SqmProperty> upcastedPtr = std::dynamic_pointer_cast<SqmProperty>(newStructure);
+			if (upcastedPtr == nullptr) {
+				throw;
 			}
-		} else {
-			objects.push_back(m_objects.at(i));
+			objects.push_back(upcastedPtr);
+			didChange = true;
+			continue;
 		}
+
+		objects.push_back(m_objects.at(i));
 	}
 
 	return objects;
 }
 
 template <typename T>
-std::shared_ptr<SqmObjectList<T>> SqmObjectList<T>::replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, std::shared_ptr<SqmStructure> current) const {
+std::shared_ptr<SqmObjectList<T>> SqmObjectList<T>::replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, std::shared_ptr<SqmObjectList<T>> const& current) const {
 	bool hasChange = false;
 	std::vector<std::shared_ptr<T>> objects = replace(old, newStructure, hasChange);
 	if (!hasChange) {

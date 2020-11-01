@@ -55,14 +55,14 @@ int main(int argc, char *argv[]) {
 	SqmParser sqmParser;
 
 	auto t1 = std::chrono::high_resolution_clock::now();
-	SqmObjectList<SqmStructure> sqmObjects = sqmParser.parse(missionFileData);
+	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 	std::cout << "Parsing SQM took " << duration << "ms." << std::endl;
 
-	markerCheck.perform(sqmObjects);
+	sqmObjects = markerCheck.perform(sqmObjects);
 
-	QString const rebuildMissionFileData = sqmObjects.toSqm(0);
+	QString const rebuildMissionFileData = sqmObjects->toSqm(0);
 	QFile outputFile("debug.sqm");
 	outputFile.open(QFile::WriteOnly);
 	QTextStream outputStream(&outputFile);
