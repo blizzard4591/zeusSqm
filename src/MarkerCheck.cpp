@@ -50,6 +50,7 @@ bool MarkerCheck::checkArguments(QCommandLineParser& parser) {
 }
 
 void MarkerCheck::perform(SqmObjectList<SqmStructure> const& sqmObjects) {
+	SqmObjectList<SqmStructure> result = sqmObjects;
 	if (checkMarkers) {
 		std::cout << "Checking marker locations..." << std::endl;
 		std::cout << "Asking for confirmation before moving: " << (markerAskConfirmation ? "yes" : "no") << std::endl;
@@ -85,17 +86,21 @@ void MarkerCheck::perform(SqmObjectList<SqmStructure> const& sqmObjects) {
 
 		for (auto it = natoMarkers.begin(), end = natoMarkers.end(); it != end; ++it) {
 			++markerCount;
-			SqmArray* const position = (**it).getArray(fieldPosition);
-			float const x = position->getEntryAsFloat(0);
-			float const y = position->getEntryAsFloat(2);
+			SqmArray& position = *(**it).getArray(fieldPosition);
+			float const x = position.getEntryAsFloat(0);
+			float const y = position.getEntryAsFloat(2);
 
 			float const xShouldBe = (static_cast<int64_t>(std::trunc(x)) / markerGrid) * markerGrid + (markerGrid / 2.0);
 			float const yShouldBe = (static_cast<int64_t>(std::trunc(y)) / markerGrid) * markerGrid + (markerGrid / 2.0);
 
 			float const xDiff = std::abs(xShouldBe - x);
 			float const yDiff = std::abs(yShouldBe - y);
-			if (xDiff <= markerMaxDistance && yDiff <= markerMaxDistance) {
+			if (((xDiff > 0.0) || (yDiff > 0.0)) && (xDiff <= markerMaxDistance) && (yDiff <= markerMaxDistance)) {
 				std::cout << "Marker at (" << x << ", " << y << ") should be moved to (" << xShouldBe << ", " << yShouldBe << ")." << std::endl;
+				// TODO: Ask for confirmation.
+
+				SqmArray fixedPosition = position.setEntry(0, xShouldBe).setEntry(2, yShouldBe);
+				result = result.replace(position, fixedPosition);
 			}
 		}
 		std::cout << "Saw " << markerCount << " markers on map." << std::endl;

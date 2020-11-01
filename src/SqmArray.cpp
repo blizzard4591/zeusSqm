@@ -49,3 +49,13 @@ float SqmArray::getEntryAsFloat(int index) const {
 	return result;
 }
 
+SqmArray SqmArray::setEntry(int index, float value) const {
+	if ((index < 0) || (index >= m_values.size())) {
+		throw;
+	}
+
+	QStringList values = m_values;
+	values[index] = QString::number(value);
+
+	return SqmArray(m_name, values, m_isMultiLine);
+}

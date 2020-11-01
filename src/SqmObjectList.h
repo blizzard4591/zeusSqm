@@ -44,6 +44,10 @@ public:
 
 	/*template <std::enable_if_t<std::is_same<T, SqmClass>::value, int> = 0>
 	SqmObjectList<T> filterRequireProperty(QString const& name) const;*/
+
+	std::shared_ptr<SqmObjectList<T>> replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, std::shared_ptr<SqmStructure> current) const;
+protected:
+	std::vector<std::shared_ptr<T>> replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, bool& didChange) const;
 private:
 	std::vector<std::shared_ptr<T>> const m_objects;
 	QHash<QString, std::shared_ptr<T>> const m_nameToObject;

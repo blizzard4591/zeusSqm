@@ -17,3 +17,21 @@ QString SqmClass::toSqm(int indentationLevel) const {
 QString const& SqmClass::getName() const {
 	return m_name;
 }
+
+std::shared_ptr<SqmClass> SqmClass::replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, std::shared_ptr<SqmClass> current) const {
+	if (*this == old) {
+		std::shared_ptr<SqmClass> const newClassStructure = std::dynamic_pointer_cast<SqmClass>(newStructure);
+		if (newClassStructure == nullptr) {
+			throw;
+		}
+
+		return newClassStructure;
+	}
+
+	bool hasChange = false;
+	std::vector<std::shared_ptr<SqmStructure>> objects = SqmObjectList<SqmStructure>::replace(old, newStructure, hasChange);
+	if (!hasChange) {
+		return current;
+	}
+	return std::make_shared<SqmClass>(m_name, objects);
+}

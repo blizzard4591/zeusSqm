@@ -17,6 +17,7 @@ public:
 	virtual QString const& getName() const override;
 
 	float getEntryAsFloat(int index) const;
+	SqmArray setEntry(int index, float value) const;
 private:
 	QString const m_name;
 	QStringList const m_values;

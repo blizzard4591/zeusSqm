@@ -16,3 +16,4 @@ QString SqmProperty::toSqm(int indentationLevel) const {
 QString const& SqmProperty::getName() const {
 	return m_name;
 }
+
