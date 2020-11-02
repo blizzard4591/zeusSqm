@@ -86,7 +86,7 @@ QString const& SqmObjectList<T>::getPropertyValue(QString const& name) const {
 }
 
 template <typename T>
-QString const& SqmObjectList<T>::getPropertyValueAsString(QString const& name) const {
+QString SqmObjectList<T>::getPropertyValueAsString(QString const& name) const {
 	QString const value = getPropertyValue(name);
 	if (value.startsWith('"') && value.endsWith('"')) {
 		return value.mid(1, value.length() - 2);
