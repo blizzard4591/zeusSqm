@@ -8,7 +8,8 @@
 #include <cstdint>
 #include <iostream>
 
-#include "MarkerCheck.h"
+#include "MarkerCheckModule.h"
+#include "StatisticsCheckModule.h"
 #include "SqmParser.h"
 
 int main(int argc, char *argv[]) {
@@ -28,7 +29,11 @@ int main(int argc, char *argv[]) {
 	QCommandLineOption inplaceOption(QStringList() << "inplace", QCoreApplication::translate("main", "Do changes inplace, i.e. write to input file. USE WITH CARE."));
 	parser.addOption(inplaceOption);
 
-	MarkerCheck markerCheck(parser);
+	MarkerCheckModule markerCheck;
+	markerCheck.registerOptions(parser);
+
+	StatisticsCheckModule statisticsCheck;
+	statisticsCheck.registerOptions(parser);
 
 	// Process the actual command line arguments given by the user
 	parser.process(app);
@@ -50,6 +55,8 @@ int main(int argc, char *argv[]) {
 
 	if (!markerCheck.checkArguments(parser)) {
 		return -1;
+	} else if (!statisticsCheck.checkArguments(parser)) {
+		return -1;
 	}
 
 	QTextStream stream(&inputFile);
@@ -65,6 +72,7 @@ int main(int argc, char *argv[]) {
 	std::cout << "Parsing SQM took " << duration << "ms." << std::endl;
 
 	sqmObjects = markerCheck.perform(sqmObjects);
+	sqmObjects = statisticsCheck.perform(sqmObjects);
 
 	QString const rebuildMissionFileData = sqmObjects->toSqm(0);
 

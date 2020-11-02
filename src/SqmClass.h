@@ -15,6 +15,7 @@ public:
 	virtual QString const& getName() const override;
 
 	std::shared_ptr<SqmClass> replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, std::shared_ptr<SqmClass> current) const;
+	std::shared_ptr<SqmClass> remove(SqmStructure const& old, std::shared_ptr<SqmClass> current) const;
 private:
 	QString const m_name;
 };

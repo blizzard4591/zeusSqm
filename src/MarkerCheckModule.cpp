@@ -1,4 +1,4 @@
-#include "MarkerCheck.h"
+#include "MarkerCheckModule.h"
 
 #include <iostream>
 
@@ -7,20 +7,25 @@
 #include "SqmProperty.h"
 #include "exceptions/FormatErrorException.h"
 
-MarkerCheck::MarkerCheck(QCommandLineParser& parser) :
+MarkerCheckModule::MarkerCheckModule() :
+	CheckModule(),
 	checkMarkerOption(QStringList() << "m" << "markers", QCoreApplication::translate("main", "Check marker placements.")),
 	markerMaxDistanceOption(QStringList() << "markerMaxDistance", QCoreApplication::translate("main", "Maximum distance of marker from center to be considered for correction (to leave deliberately placed markers where they are, default: 25).")),
 	markerAskConfirmationOption(QStringList() << "markerAskConfirmation", QCoreApplication::translate("main", "Will ask for each marker whether it should be moved (default: no).")),
 	markerGridOption(QStringList() << "markerGrid", QCoreApplication::translate("main", "What grid the markers should snap to (default: 100).")),
 	checkMarkers(false), markerGrid(0), markerMaxDistance(0), markerAskConfirmation(false)
 {
+	//
+}
+
+void MarkerCheckModule::registerOptions(QCommandLineParser& parser) {
 	parser.addOption(checkMarkerOption);
 	parser.addOption(markerMaxDistanceOption);
 	parser.addOption(markerAskConfirmationOption);
 	parser.addOption(markerGridOption);
 }
 
-bool MarkerCheck::checkArguments(QCommandLineParser& parser) {
+bool MarkerCheckModule::checkArguments(QCommandLineParser& parser) {
 	checkMarkers = parser.isSet(checkMarkerOption);
 	markerGrid = 100;
 	if (parser.isSet(markerGridOption)) {
@@ -49,7 +54,7 @@ bool MarkerCheck::checkArguments(QCommandLineParser& parser) {
 	return true;
 }
 
-std::shared_ptr<SqmObjectList<SqmStructure>> MarkerCheck::perform(std::shared_ptr<SqmObjectList<SqmStructure>> const& sqmObjects) {
+std::shared_ptr<SqmObjectList<SqmStructure>> MarkerCheckModule::perform(std::shared_ptr<SqmObjectList<SqmStructure>> const& sqmObjects) {
 	std::shared_ptr<SqmObjectList<SqmStructure>> result = sqmObjects;
 	if (checkMarkers) {
 		std::cout << "Checking marker locations..." << std::endl;

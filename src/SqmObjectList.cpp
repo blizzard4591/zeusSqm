@@ -138,6 +138,32 @@ SqmObjectList<SqmProperty> SqmObjectList<T>::onlyProperties() const {
 }
 
 template <typename T>
+std::vector<std::shared_ptr<T>> SqmObjectList<T>::remove(SqmStructure const& old, bool& didChange) const {
+	std::vector<std::shared_ptr<T>> objects;
+	didChange = false;
+	for (std::size_t i = 0; i < m_objects.size(); ++i) {
+		if (*m_objects.at(i) == old) {
+			didChange = true;
+			continue;
+		}
+
+		std::shared_ptr<SqmClass> const sqmClass = std::dynamic_pointer_cast<SqmClass>(m_objects.at(i));
+		if (sqmClass != nullptr) {
+			std::shared_ptr<SqmClass> const replacedSqmClass = sqmClass->remove(old, sqmClass);
+			std::shared_ptr<T> const downcastedReplaced = std::dynamic_pointer_cast<T>(replacedSqmClass);
+			objects.push_back(downcastedReplaced);
+			if (*sqmClass != *downcastedReplaced) {
+				didChange = true;
+			}
+		} else {
+			objects.push_back(m_objects.at(i));
+		}
+	}
+
+	return objects;
+}
+
+template <typename T>
 std::vector<std::shared_ptr<T>> SqmObjectList<T>::replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, bool& didChange) const {
 	std::vector<std::shared_ptr<T>> objects;
 	didChange = false;
@@ -215,6 +241,16 @@ template <typename T>
 std::shared_ptr<SqmObjectList<T>> SqmObjectList<T>::replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, std::shared_ptr<SqmObjectList<T>> const& current) const {
 	bool hasChange = false;
 	std::vector<std::shared_ptr<T>> objects = replace(old, newStructure, hasChange);
+	if (!hasChange) {
+		return current;
+	}
+	return std::make_shared<SqmObjectList<T>>(objects);
+}
+
+template <typename T>
+std::shared_ptr<SqmObjectList<T>> SqmObjectList<T>::remove(SqmStructure const& old, std::shared_ptr<SqmObjectList<T>> const& current) const {
+	bool hasChange = false;
+	std::vector<std::shared_ptr<T>> objects = remove(old, hasChange);
 	if (!hasChange) {
 		return current;
 	}
