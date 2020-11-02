@@ -29,6 +29,7 @@ public:
 
 	bool hasProperty(QString const& name) const;
 	QString const& getPropertyValue(QString const& name) const;
+	QString const& getPropertyValueAsString(QString const& name) const;
 
 	bool hasArray(QString const& name) const;
 	SqmArray* getArray(QString const& name) const;

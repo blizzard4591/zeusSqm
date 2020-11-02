@@ -86,6 +86,16 @@ QString const& SqmObjectList<T>::getPropertyValue(QString const& name) const {
 }
 
 template <typename T>
+QString const& SqmObjectList<T>::getPropertyValueAsString(QString const& name) const {
+	QString const value = getPropertyValue(name);
+	if (value.startsWith('"') && value.endsWith('"')) {
+		return value.mid(1, value.length() - 2);
+	}
+
+	throw;
+}
+
+template <typename T>
 bool SqmObjectList<T>::hasArray(QString const& name) const {
 	SqmArray* const property = dynamic_cast<SqmArray*>(getByName(name));
 	return (property != nullptr);

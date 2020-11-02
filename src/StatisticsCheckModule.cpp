@@ -10,7 +10,7 @@
 StatisticsCheckModule::StatisticsCheckModule() :
 	CheckModule(),
 	setBluforRelationOption(QStringList() << "setBluforVsIndependent", QCoreApplication::translate("main", "Overwrite side relations between BLUFOR and independent"), QCoreApplication::translate("main", "<new relation>, either 'war' or 'peace'")),
-	setOpforRelationOption(QStringList() << "setBluforVsIndependent", QCoreApplication::translate("main", "Overwrite side relations between BLUFOR and independent"), QCoreApplication::translate("main", "<new relation>, either 'war' or 'peace'")),
+	setOpforRelationOption(QStringList() << "setOpforVsIndependent", QCoreApplication::translate("main", "Overwrite side relations between OPFOR and independent"), QCoreApplication::translate("main", "<new relation>, either 'war' or 'peace'")),
 	changeBluforRelation(false), bluforAtWar(false), changeOpforRelation(false), opforAtWar(false)
 {
 	//
@@ -54,7 +54,7 @@ bool StatisticsCheckModule::checkArguments(QCommandLineParser& parser) {
 std::shared_ptr<SqmObjectList<SqmStructure>> StatisticsCheckModule::perform(std::shared_ptr<SqmObjectList<SqmStructure>> const& sqmObjects) {
 	std::shared_ptr<SqmObjectList<SqmStructure>> result = sqmObjects;
 
-	std::cout << "Showing mission data..." << std::endl;
+	std::cout << std::endl << "Showing mission data..." << std::endl;
 	
 	SqmClass* classMission = dynamic_cast<SqmClass*>(sqmObjects->getByName(QStringLiteral("Mission")));
 	if (classMission == nullptr) {
@@ -74,8 +74,8 @@ std::shared_ptr<SqmObjectList<SqmStructure>> StatisticsCheckModule::perform(std:
 	bool const independentAtWarWithOpfor = (!classIntel->hasProperty(QStringLiteral("resistanceEast"))) || (classIntel->getPropertyValue(QStringLiteral("resistanceEast")).compare("0") == 0);
 
 	std::cout << "Current Side relations:" << std::endl;
-	std::cout << "BLUFOR vs. Independent: " << (independentAtWarWithBlufor ? "WAR" : "peaceful") << std::endl;
-	std::cout << "OPFOR vs. Independent: " << (independentAtWarWithOpfor ? "WAR" : "peaceful") << std::endl;
+	std::cout << "BLUFOR vs. Independent: " << (independentAtWarWithBlufor ? "WAR" : "peace") << std::endl;
+	std::cout << "OPFOR vs. Independent: " << (independentAtWarWithOpfor ? "WAR" : "peace") << std::endl;
 
 	return result;
 }

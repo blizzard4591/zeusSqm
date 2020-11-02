@@ -6,6 +6,9 @@
 #include "SqmClass.h"
 #include "SqmProperty.h"
 #include "exceptions/FormatErrorException.h"
+#include "ColorName.h"
+#include "FillName.h"
+#include "MarkerType.h"
 
 MarkerCheckModule::MarkerCheckModule() :
 	CheckModule(),
@@ -57,7 +60,7 @@ bool MarkerCheckModule::checkArguments(QCommandLineParser& parser) {
 std::shared_ptr<SqmObjectList<SqmStructure>> MarkerCheckModule::perform(std::shared_ptr<SqmObjectList<SqmStructure>> const& sqmObjects) {
 	std::shared_ptr<SqmObjectList<SqmStructure>> result = sqmObjects;
 	if (checkMarkers) {
-		std::cout << "Checking marker locations..." << std::endl;
+		std::cout << std::endl << "Checking marker locations..." << std::endl;
 		std::cout << "Asking for confirmation before moving: " << (markerAskConfirmation ? "yes" : "no") << std::endl;
 		std::cout << "Marker grid size: " << markerGrid << std::endl;
 		std::cout << "Maximum distance of marker to grid-center to consider move: " << markerMaxDistance << std::endl;
@@ -78,20 +81,21 @@ std::shared_ptr<SqmObjectList<SqmStructure>> MarkerCheckModule::perform(std::sha
 		static const QString fieldDataType = QStringLiteral("dataType");
 		static const QString fieldType = QStringLiteral("type");
 		static const QString fieldPosition = QStringLiteral("position");
-		static const QString valueMarker = QStringLiteral("\"Marker\"");
+		static const QString valueMarker = QStringLiteral("Marker");
 
 		SqmObjectList<SqmClass> natoMarkers = classEntities->onlyClasses().filter([](std::shared_ptr<SqmClass> const& classItem) {
 			if (!classItem->hasProperty(fieldDataType)) throw;
-			if (classItem->getPropertyValue(fieldDataType).compare(valueMarker) != 0) return false;
+			if (classItem->getPropertyValueAsString(fieldDataType).compare(valueMarker) != 0) return false;
 			if (!classItem->hasArray(fieldPosition)) return false;
 			if (!classItem->hasProperty(fieldDataType)) return false;
-			QString const& v = classItem->getPropertyValue(fieldType);
-			return (v.startsWith("\"b_") || v.startsWith("\"o_") || v.startsWith("\"n_") || v.startsWith("\"n_"));
+			QString const& v = classItem->getPropertyValueAsString(fieldType);
+			return (v.startsWith("b_") || v.startsWith("o_") || v.startsWith("n_") || v.startsWith("c_"));
 		});
 
 		for (auto it = natoMarkers.begin(), end = natoMarkers.end(); it != end; ++it) {
+			SqmClass& marker = (**it);
 			++markerCount;
-			SqmArray& position = *(**it).getArray(fieldPosition);
+			SqmArray& position = *marker.getArray(fieldPosition);
 			float const x = position.getEntryAsFloat(0);
 			float const y = position.getEntryAsFloat(2);
 
@@ -101,19 +105,46 @@ std::shared_ptr<SqmObjectList<SqmStructure>> MarkerCheckModule::perform(std::sha
 			float const xDiff = std::abs(xShouldBe - x);
 			float const yDiff = std::abs(yShouldBe - y);
 			if (((xDiff > 0.0) || (yDiff > 0.0)) && (xDiff <= markerMaxDistance) && (yDiff <= markerMaxDistance)) {
-				std::cout << "Marker at (" << x << ", " << y << ") should be moved to (" << xShouldBe << ", " << yShouldBe << ")." << std::endl;
+				MarkerType const markerType = MarkerTypeHelper::fromString(marker.getPropertyValueAsString(fieldType));
+				std::string const markerName = MarkerTypeHelper::toDisplayString(markerType).toStdString();
+				std::string markerColor;
+				if (marker.hasProperty("colorName")) {
+					markerColor = ColorNameHelper::toDisplayString(ColorNameHelper::fromString(marker.getPropertyValueAsString("colorName"))).toStdString();
+				} else {
+					switch (MarkerTypeHelper::getSide(markerType)) {
+					case MarkerTypeHelper::Side::BLUFOR:
+						markerColor = ColorNameHelper::toDisplayString(ColorName::BLUFOR).toStdString();
+						break;
+					case MarkerTypeHelper::Side::OPFOR:
+						markerColor = ColorNameHelper::toDisplayString(ColorName::OPFOR).toStdString();
+						break;
+					case MarkerTypeHelper::Side::INDEPENDENT:
+						markerColor = ColorNameHelper::toDisplayString(ColorName::Independent).toStdString();
+						break;
+					case MarkerTypeHelper::Side::CIVILIAN:
+						markerColor = ColorNameHelper::toDisplayString(ColorName::Civilian).toStdString();
+						break;
+					default:
+						throw;
+					}
+				}
+
+				std::cout << "Marker '" << markerName << "' (" << markerColor << ") at (" << x << ", " << y << ") should be moved to (" << xShouldBe << ", " << yShouldBe << ")." << std::endl;
 				if (markerAskConfirmation) {
 					std::cout << "Perform marker relocation from (" << x << ", " << y << ") to (" << xShouldBe << ", " << yShouldBe << ")? [y/n]" << std::endl;
 					std::string userChoice;
 					std::getline(std::cin, userChoice);
-					if (userChoice.compare("y") == 0) {
-						std::shared_ptr<SqmArray> fixedPosition = std::make_shared<SqmArray>(position.setEntry(0, xShouldBe).setEntry(2, yShouldBe));
-						result = result->replace(position, fixedPosition, result);
-
-						std::cout << "Okay, relocated." << std::endl;
-					} else {
+					if (userChoice.compare("y") != 0) {
 						std::cout << "NOT relocated." << std::endl;
+						continue;
 					}
+				}
+
+				std::shared_ptr<SqmArray> fixedPosition = std::make_shared<SqmArray>(position.setEntry(0, xShouldBe).setEntry(2, yShouldBe));
+				result = result->replace(position, fixedPosition, result);
+
+				if (markerAskConfirmation) {
+					std::cout << "Okay, relocated." << std::endl;
 				}
 			}
 		}
