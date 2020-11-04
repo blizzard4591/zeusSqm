@@ -2,6 +2,7 @@
 #define ZEUSSQM_PARSER_SQMHANDLING_H_
 
 #include <memory>
+#include <vector>
 
 #include "SqmArray.h"
 #include "SqmClass.h"
@@ -12,8 +13,15 @@ class SqmHandling {
 public:
 	virtual ~SqmHandling() {}
 
-	static SqmRoot nextItemId(SqmRoot const& root, int& nextId);
-	static SqmRoot newVrShapeObject(SqmRoot const& root, int x, int y, int z);
+	struct Position {
+		int x;
+		int y;
+		int z;
+	};
+
+	static SqmRoot nextItemIds(SqmRoot const& root, int& firstNextId, int requestedIdCount = 1);
+	static SqmRoot addVrShapeObjects(SqmRoot const& root, std::vector<Position> const& positions);
+
 private:
 	static std::shared_ptr<SqmClass> newPosition(int x, int y, int z);
 };

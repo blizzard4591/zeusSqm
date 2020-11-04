@@ -6,6 +6,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <vector>
+
 class SqmClass : public SqmObjectList<SqmStructure> {
 public:
 	SqmClass(QString const& name, SqmObjectList<SqmStructure> const& objects);
@@ -14,7 +16,7 @@ public:
 	virtual QString toSqm(int indentationLevel) const override;
 	virtual QString const& getName() const override;
 
-	SqmRoot insertClassItemWithItemCountIncrement(SqmObjectList<SqmStructure> const& objects, SqmRoot const& root) const;
+	SqmRoot insertClassItemsWithItemCountIncrement(std::vector<SqmObjectList<SqmStructure>> const& objects, SqmRoot const& root) const;
 
 	std::shared_ptr<SqmClass> replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, std::shared_ptr<SqmClass> current) const;
 	std::shared_ptr<SqmClass> remove(SqmStructure const& old, std::shared_ptr<SqmClass> current) const;

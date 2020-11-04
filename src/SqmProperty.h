@@ -14,7 +14,7 @@ public:
 	QString getValueAsString() const;
 	int getValueAsInt() const;
 
-	std::shared_ptr<SqmProperty> increment(int* oldValue = nullptr) const;
+	std::shared_ptr<SqmProperty> increment(int incrementBy, int* oldValue = nullptr) const;
 
 	virtual QString toSqm(int indentationLevel) const override;
 	virtual QString const& getName() const override;

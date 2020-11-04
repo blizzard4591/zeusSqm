@@ -1,5 +1,6 @@
 #include "ObjectBuilderModule.h"
 
+#include <chrono>
 #include <iostream>
 
 #include <QImageReader>
@@ -95,10 +96,14 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 	SqmRoot root = sqmObjects;
 
 	if (buildFromImage) {
+		auto t1 = std::chrono::high_resolution_clock::now();
+
 		int w = image.width();
 		int h = image.height();
+		std::cout << std::endl << "Inserting your " << w << " x " << h << " image into map..." << std::endl;
 
 		std::size_t addedObjectCount = 0;
+		std::vector<SqmHandling::Position> positions;
 		for (int ih = h - 1, z = 0; ih >= 0; --ih, ++z) {
 			for (int iw = 0; iw < w ; ++iw) {
 				QRgb const rgb = image.pixel(iw, ih);
@@ -110,8 +115,7 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 
 				if (a > minAlphaValue) {
 					std::cout << " X";
-					root = SqmHandling::newVrShapeObject(root, startingPosition[0] + iw, startingPosition[1] + 0, startingPosition[2] + z);
-					//$missionAddition . = newObject($baseCoords, $iw, 0, $z);
+					positions.push_back({ startingPosition[0] + iw, startingPosition[1] + 0, startingPosition[2] + z });
 					++addedObjectCount;
 				} else {
 					std::cout << "  ";
@@ -119,6 +123,11 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 			}
 			std::cout << std::endl;
 		}
+		root = SqmHandling::addVrShapeObjects(root, positions);
+
+		auto t2 = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+		std::cout << "Building your object into the map took " << duration << "ms." << std::endl;
 	}
 
 	return root;

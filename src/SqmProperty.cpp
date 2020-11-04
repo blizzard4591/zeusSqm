@@ -24,13 +24,14 @@ int SqmProperty::getValueAsInt() const {
 	return result;
 }
 
-std::shared_ptr<SqmProperty> SqmProperty::increment(int* oldValue) const {
+std::shared_ptr<SqmProperty> SqmProperty::increment(int incrementBy, int* oldValue) const {
+	if (incrementBy < 1) throw;
 	int const valueBefore = getValueAsInt();
 	if (oldValue != nullptr) {
 		*oldValue = valueBefore;
 	}
 
-	return std::make_shared<SqmProperty>(getName(), QString::number(valueBefore + 1));
+	return std::make_shared<SqmProperty>(getName(), QString::number(valueBefore + incrementBy));
 }
 
 QString SqmProperty::toSqm(int indentationLevel) const {

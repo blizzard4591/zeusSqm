@@ -27,7 +27,7 @@ private:
 	int minAlphaValue;
 	QImage image;
 	BuildPlane buildPlane;
-	std::int64_t startingPosition[3];
+	int startingPosition[3];
 };
 
 #endif

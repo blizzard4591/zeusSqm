@@ -36,14 +36,12 @@ std::shared_ptr<SqmClass> SqmClass::remove(SqmStructure const& old, std::shared_
 	return std::make_shared<SqmClass>(m_name, objects);
 }
 
-SqmRoot SqmClass::insertClassItemWithItemCountIncrement(SqmObjectList<SqmStructure> const& itemObjects, SqmRoot const& root) const {
+SqmRoot SqmClass::insertClassItemsWithItemCountIncrement(std::vector<SqmObjectList<SqmStructure>> const& itemObjects, SqmRoot const& root) const {
 	// 1. Get current item count in ourself for ItemName
 	std::shared_ptr<SqmProperty> const itemsProperty = this->getProperty(QStringLiteral("items"));
 	int currentItemCount = -1;
-	std::shared_ptr<SqmProperty> const newItemsProperty = itemsProperty->increment(&currentItemCount);
-	// 2. New ItemName
-	QString const itemName = QStringLiteral("Item%1").arg(currentItemCount);
-	// 3. Fix our content (item count + new Item)
+	std::shared_ptr<SqmProperty> const newItemsProperty = itemsProperty->increment(static_cast<int>(itemObjects.size()), &currentItemCount);
+	// 2. Fix our content (item count + new Item)
 	std::vector<std::shared_ptr<SqmStructure>> objects;
 	for (std::size_t i = 0; i < getObjects().size(); ++i) {
 		if (*getObjects().at(i) == *itemsProperty) {
@@ -53,8 +51,13 @@ SqmRoot SqmClass::insertClassItemWithItemCountIncrement(SqmObjectList<SqmStructu
 		}
 	}
 
-	std::shared_ptr<SqmClass> newItem = std::make_shared<SqmClass>(itemName, itemObjects);
-	objects.push_back(newItem);
+	for (auto it = itemObjects.cbegin(), end = itemObjects.cend(); it != end; ++it) {
+		// 3. New ItemName
+		QString const itemName = QStringLiteral("Item%1").arg(currentItemCount++);
+		std::shared_ptr<SqmClass> newItem = std::make_shared<SqmClass>(itemName, *it);
+		objects.push_back(newItem);
+	}
+	
 	std::shared_ptr<SqmClass> newSelf = std::make_shared<SqmClass>(getName(), objects);
 	return root->replace(*this, newSelf, root);
 }
