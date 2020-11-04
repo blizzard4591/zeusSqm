@@ -76,23 +76,24 @@ bool SqmObjectList<T>::hasProperty(QString const& name) const {
 }
 
 template <typename T>
-QString const& SqmObjectList<T>::getPropertyValue(QString const& name) const {
-	SqmProperty* const property = dynamic_cast<SqmProperty*>(getByName(name));
-	if (property == nullptr) {
-		throw;
+std::shared_ptr<SqmProperty> SqmObjectList<T>::getProperty(QString const& name) const {
+	if (m_nameToObject.contains(name)) {
+		std::shared_ptr<SqmProperty> property = std::dynamic_pointer_cast<SqmProperty>(*m_nameToObject.constFind(name));
+		if (property != nullptr) {
+			return property;
+		}
 	}
+	throw;
+}
 
-	return property->getValue();
+template <typename T>
+QString const& SqmObjectList<T>::getPropertyValue(QString const& name) const {
+	return getProperty(name)->getValue();
 }
 
 template <typename T>
 QString SqmObjectList<T>::getPropertyValueAsString(QString const& name) const {
-	QString const value = getPropertyValue(name);
-	if (value.startsWith('"') && value.endsWith('"')) {
-		return value.mid(1, value.length() - 2);
-	}
-
-	throw;
+	return getProperty(name)->getValueAsString();
 }
 
 template <typename T>

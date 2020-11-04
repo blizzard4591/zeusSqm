@@ -10,14 +10,23 @@
 
 #include "MarkerCheckModule.h"
 #include "StatisticsCheckModule.h"
+#include "ObjectBuilderModule.h"
 #include "SqmParser.h"
+
+uint8_t convertA(char c) {
+	return (uint8_t)c;
+}
+
+uint8_t convertB(char c) {
+	uint8_t result = *reinterpret_cast<uint8_t*>(&c);
+	return result;
+}
 
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
 
 	QCoreApplication::setApplicationName("zeusSqm");
 	QCoreApplication::setApplicationVersion("1.0");
-
 
 	QCommandLineParser parser;
 	parser.setApplicationDescription("ARMA3 SQM Parser/Validator");
@@ -34,6 +43,9 @@ int main(int argc, char *argv[]) {
 
 	StatisticsCheckModule statisticsCheck;
 	statisticsCheck.registerOptions(parser);
+
+	ObjectBuilderModule objectBuilder;
+	objectBuilder.registerOptions(parser);
 
 	// Process the actual command line arguments given by the user
 	parser.process(app);
@@ -57,6 +69,8 @@ int main(int argc, char *argv[]) {
 		return -1;
 	} else if (!statisticsCheck.checkArguments(parser)) {
 		return -1;
+	} else if (!objectBuilder.checkArguments(parser)) {
+		return -1;
 	}
 
 	QTextStream stream(&inputFile);
@@ -73,6 +87,7 @@ int main(int argc, char *argv[]) {
 
 	sqmObjects = markerCheck.perform(sqmObjects);
 	sqmObjects = statisticsCheck.perform(sqmObjects);
+	sqmObjects = objectBuilder.perform(sqmObjects);
 
 	QString const rebuildMissionFileData = sqmObjects->toSqm(0);
 

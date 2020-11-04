@@ -43,6 +43,7 @@ endif()
 
 # Find the Qt library
 find_package(Qt5Core REQUIRED)
+find_package(Qt5Gui REQUIRED)
 
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /MP")
@@ -175,6 +176,7 @@ endif(MSVC)
 
 # Use the required modules from Qt 5.
 target_link_libraries(zeusSqm Qt5::Core)
+target_link_libraries(zeusSqm Qt5::Gui)
 
 target_link_libraries(zeusSqmVersionInfo Qt5::Core)
 

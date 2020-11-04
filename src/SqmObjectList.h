@@ -28,6 +28,7 @@ public:
 	typename std::vector<std::shared_ptr<T>>::const_iterator end() const;
 
 	bool hasProperty(QString const& name) const;
+	std::shared_ptr<SqmProperty> getProperty(QString const& name) const;
 	QString const& getPropertyValue(QString const& name) const;
 	QString getPropertyValueAsString(QString const& name) const;
 
@@ -54,5 +55,7 @@ private:
 
 	static QHash<QString, std::shared_ptr<T>> createNameToObjectMapping(std::vector<std::shared_ptr<T>> const& objects);
 };
+
+typedef std::shared_ptr<SqmObjectList<SqmStructure>> SqmRoot;
 
 #endif

@@ -77,5 +77,26 @@ std::shared_ptr<SqmObjectList<SqmStructure>> StatisticsCheckModule::perform(std:
 	std::cout << "BLUFOR vs. Independent: " << (independentAtWarWithBlufor ? "WAR" : "peace") << std::endl;
 	std::cout << "OPFOR vs. Independent: " << (independentAtWarWithOpfor ? "WAR" : "peace") << std::endl;
 
+	// Number of Mods in the game
+	SqmClass* classEntities = dynamic_cast<SqmClass*>(classMission->getByName(QStringLiteral("Entities")));
+	if (classEntities == nullptr) {
+		std::cerr << "FORMAT ERROR: SQM does not contain class 'Entities', is it complete/the correct file?" << std::endl;
+		throw zeusops::exceptions::FormatErrorException() << "FORMAT ERROR: SQM does not contain class 'Entities', is it complete/the correct file?";
+	}
+
+	SqmObjectList<SqmClass> zeuses = classEntities->onlyClasses().filter([](std::shared_ptr<SqmClass> const& classItem) {
+		if (!classItem->hasProperty("type")) return false;
+		if (classItem->getPropertyValueAsString("type").compare("VirtualCurator_F") != 0) return false;
+		if (classItem->getPropertyValueAsString("description").compare("Zeus") != 0) return false;
+		return true;
+	});
+	SqmObjectList<SqmClass> moderators = classEntities->onlyClasses().filter([](std::shared_ptr<SqmClass> const& classItem) {
+		if (!classItem->hasProperty("type")) return false;
+		if (classItem->getPropertyValueAsString("type").compare("VirtualCurator_F") != 0) return false;
+		if (classItem->getPropertyValueAsString("description").compare("Mod") != 0) return false;
+		return true;
+	});
+	std::cout << "There " << (zeuses.size() == 1 ? "is" : "are") << " " << zeuses.size() << " Zeus slot" << (zeuses.size() == 1 ? "" : "s") << " and " << moderators.size() << " moderator slot" << (moderators.size() == 1 ? "" : "s") << " in this mission." << std::endl;
+
 	return result;
 }

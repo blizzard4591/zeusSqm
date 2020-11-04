@@ -11,9 +11,16 @@ public:
 	virtual ~SqmProperty() {}
 
 	QString const& getValue() const;
+	QString getValueAsString() const;
+	int getValueAsInt() const;
+
+	std::shared_ptr<SqmProperty> increment(int* oldValue = nullptr) const;
 
 	virtual QString toSqm(int indentationLevel) const override;
 	virtual QString const& getName() const override;
+
+	static std::shared_ptr<SqmProperty> newStringProperty(QString const& name, QString const& value);
+	static std::shared_ptr<SqmProperty> newIntegerProperty(QString const& name, int value);
 private:
 	QString const m_name;
 	QString const m_value;
