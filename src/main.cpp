@@ -13,6 +13,8 @@
 #include "ObjectBuilderModule.h"
 #include "SqmParser.h"
 
+#include "version.h"
+
 uint8_t convertA(char c) {
 	return (uint8_t)c;
 }
@@ -26,7 +28,7 @@ int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
 
 	QCoreApplication::setApplicationName("zeusSqm");
-	QCoreApplication::setApplicationVersion("1.0");
+	QCoreApplication::setApplicationVersion(QString::fromStdString(Version::versionWithTagString()));
 
 	QCommandLineParser parser;
 	parser.setApplicationDescription("ARMA3 SQM Parser/Validator");
@@ -72,6 +74,10 @@ int main(int argc, char *argv[]) {
 	} else if (!objectBuilder.checkArguments(parser)) {
 		return -1;
 	}
+
+	// HEADER
+	std::cout << "ARMA3 SQM Parser/Validator/Fixer v" << Version::versionWithTagString() << std::endl;
+	std::cout << std::endl;
 
 	QTextStream stream(&inputFile);
 	QString const missionFileData = stream.readAll();
