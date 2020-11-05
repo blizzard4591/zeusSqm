@@ -298,10 +298,10 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 						SqmArrayContents::ArrayEntry entry;
 						if (trimmed.at(0) == cQuote) {
 							entry = SqmArrayContents::ArrayEntry(trimmed.mid(1, trimmed.size() - 2));
-						} else if (trimmed.indexOf('.') == -1) {
-							entry = SqmArrayContents::ArrayEntry(trimmed.toInt());
-						} else {
+						} else if ((trimmed.indexOf('.') > -1) || (trimmed.compare(QStringLiteral("-0")) == 0)) {
 							entry = SqmArrayContents::ArrayEntry(trimmed.toFloat(), trimmed);
+						} else {
+							entry = SqmArrayContents::ArrayEntry(trimmed.toInt());
 						}
 						arrayEntries.push_back(entry);
 					}
@@ -336,12 +336,12 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 					QString const value = input.mid(equalPos + 1, posOfClosingSemicolon - equalPos - 1);
 					if (value.at(0) == cQuote) {
 						objects.push_back(std::make_shared<SqmStringProperty>(name, value.mid(1, value.size() - 2).replace("\"\"", "\"")));
-					} else if (value.indexOf('.') == -1) {
+					} else if (value.indexOf('.') > -1) {
+						objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
+					} else {
 						bool ok = false;
 						objects.push_back(std::make_shared<SqmIntProperty>(name, value.toInt(&ok)));
 						if (!ok) failureReport("Could not parse integer property (line LINE, offset OFFSET)", input, offset);
-					} else {
-						objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
 					}
 
 					offset = posOfClosingSemicolon + 1;

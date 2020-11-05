@@ -33,6 +33,9 @@ int main(int argc, char *argv[]) {
 	QCommandLineOption inplaceOption(QStringList() << "inplace", QCoreApplication::translate("main", "Do changes inplace, i.e. write to input file. USE WITH CARE."));
 	parser.addOption(inplaceOption);
 
+	QCommandLineOption extractFromPboOption(QStringList() << "extractFromPbo", QCoreApplication::translate("main", "Extract the mission.sqm from PBO file and save it unchanged."), QCoreApplication::translate("main", "extracted mission.sqm"));
+	parser.addOption(extractFromPboOption);
+
 	MarkerCheckModule markerCheck;
 	markerCheck.registerOptions(parser);
 
@@ -87,10 +90,17 @@ int main(int argc, char *argv[]) {
 
 					input.close();
 					std::cout << "Loaded mission.sqm (" << size << " Bytes) from PBO." << std::endl;
-					//QFile test("debug.pbo.sqm");
-					//test.open(QFile::WriteOnly);
-					//test.write(tempstorage);
-					//test.close();
+					if (parser.isSet(extractFromPboOption)) {
+						QFile pboSqm(parser.value(extractFromPboOption));
+						if (pboSqm.open(QFile::WriteOnly)) {
+							pboSqm.write(missionBinaryData);
+							pboSqm.close();
+							std::cout << "Saved mission.sqm from PBO to '" << parser.value(extractFromPboOption).toStdString() << "' (untouched)." << std::endl;
+						} else {
+							std::cout << "Failed to save mission.sqm from PBO to '" << parser.value(extractFromPboOption).toStdString() << "', is it writable?" << std::endl;
+							return EXIT_FAILURE;
+						}
+					}
 					break;
 				}
 			}
@@ -125,6 +135,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
+	bool useSimpleNewline = false;
 	SqmParser sqmParser;
 	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects;
 	if (missionBinaryData.size() > 0 && missionBinaryData.at(0) == '\0') {
@@ -133,14 +144,26 @@ int main(int argc, char *argv[]) {
 		std::cerr << "Input SQM file is empty :(" << std::endl;
 		return EXIT_FAILURE;
 	} else {
+		// Check if the input used Linux-style \n newlines.
+		useSimpleNewline = missionFileData.count("\r\n") == 0;
 		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
 	}
 	
+	if (sqmObjects->getIntProperty(QStringLiteral("version"))->getValueAsInt() != 53) {
+		std::cerr << "Incompatile version: SQM version is not 53, but instead " << sqmObjects->getIntProperty(QStringLiteral("version"))->getValueAsInt() << ". Can not parse!" << std::endl;
+		return EXIT_FAILURE;
+	}
+
 	sqmObjects = markerCheck.perform(sqmObjects);
 	sqmObjects = statisticsCheck.perform(sqmObjects);
 	sqmObjects = objectBuilder.perform(sqmObjects);
 
-	QString const rebuildMissionFileData = sqmObjects->toSqm(0);
+	QString rebuildMissionFileData = sqmObjects->toSqm(0);
+
+	// Match the newline-style of the input
+	if (useSimpleNewline) {
+		rebuildMissionFileData.replace("\r\n", "\n");
+	}
 
 	QFile outputFile;
 	if (parser.isSet(inplaceOption)) {
@@ -154,6 +177,7 @@ int main(int argc, char *argv[]) {
 		return -5;
 	}
 	QTextStream outputStream(&outputFile);
+	outputStream.setCodec("UTF-8");
 	outputStream << rebuildMissionFileData;
 	outputFile.close();
 	std::cout << std::endl << "Saved SQM to '" << outputFile.fileName().toStdString() << "'." << std::endl;
