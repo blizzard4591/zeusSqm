@@ -13,16 +13,9 @@
 #include "ObjectBuilderModule.h"
 #include "SqmParser.h"
 
+#include "libpbo/pbo.hpp"
+
 #include "version.h"
-
-uint8_t convertA(char c) {
-	return (uint8_t)c;
-}
-
-uint8_t convertB(char c) {
-	uint8_t result = *reinterpret_cast<uint8_t*>(&c);
-	return result;
-}
 
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
@@ -61,10 +54,62 @@ int main(int argc, char *argv[]) {
 		parser.showHelp(-1);
 	}
 
-	QFile inputFile(args.at(0));
-	if (!inputFile.open(QFile::ReadOnly)) {
-		std::cerr << "Failed to open input file '" << args.at(0).toStdString() << "'. Terminating..." << std::endl;
-		return -1;
+	// HEADER
+	std::cout << "ARMA3 SQM Parser/Validator/Fixer v" << Version::versionWithTagString() << std::endl;
+	std::cout << std::endl;
+
+	QByteArray missionBinaryData;
+	QString missionFileData;
+
+	QString const inputFilename = args.at(0);
+	if (inputFilename.endsWith(".pbo")) {
+		PBO::PBO pbo_file(inputFilename.toStdString());
+		try {
+			pbo_file.unpack();
+
+			for (auto entry : pbo_file) {
+				auto size = entry->get_data_size();
+				auto offset = entry->get_data_offset();
+
+				if (size > 0) {
+					//std::vector<char> tempstorage(size);
+					missionBinaryData = QByteArray(size, '\0');
+
+					auto outfilename = entry->get_path().string();
+					if (outfilename != "mission.sqm") {
+						continue;
+					}
+
+					std::ifstream input(inputFilename.toStdString(), std::ios_base::binary);
+					input.seekg(offset);
+					input.read(missionBinaryData.data(), size);
+					missionFileData = QString(missionBinaryData);
+
+					input.close();
+					std::cout << "Loaded mission.sqm (" << size << " Bytes) from PBO." << std::endl;
+					//QFile test("debug.pbo.sqm");
+					//test.open(QFile::WriteOnly);
+					//test.write(tempstorage);
+					//test.close();
+					break;
+				}
+			}
+		} catch (std::exception const& e) {
+			std::cerr << "pbounpack : " << e.what() << std::endl;
+			return EXIT_FAILURE;
+		}
+	} else {
+		QFile inputFile(args.at(0));
+		if (!inputFile.open(QFile::ReadOnly)) {
+			std::cerr << "Failed to open input file '" << args.at(0).toStdString() << "'. Terminating..." << std::endl;
+			return -1;
+		}
+
+		missionBinaryData = inputFile.readAll();
+		inputFile.seek(0);
+		QTextStream stream(&inputFile);
+		missionFileData = stream.readAll();
+		inputFile.close();
 	}
 
 	if (!markerCheck.checkArguments(parser)) {
@@ -75,22 +120,17 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	// HEADER
-	std::cout << "ARMA3 SQM Parser/Validator/Fixer v" << Version::versionWithTagString() << std::endl;
-	std::cout << std::endl;
-
-	QTextStream stream(&inputFile);
-	QString const missionFileData = stream.readAll();
-	inputFile.close();
-
 	SqmParser sqmParser;
+	if (missionBinaryData.size() > 0 && missionBinaryData.at(0) == '\0') {
+		sqmParser.parse(missionBinaryData);
+		return 0;
+	} else if (missionFileData.size() == 0) {
+		std::cerr << "This SQM is empty :(" << std::endl;
+		return -2;
+	}
 
-	auto t1 = std::chrono::high_resolution_clock::now();
 	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
-	auto t2 = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	std::cout << "Parsing SQM took " << duration << "ms." << std::endl;
-
+	
 	sqmObjects = markerCheck.perform(sqmObjects);
 	sqmObjects = statisticsCheck.perform(sqmObjects);
 	sqmObjects = objectBuilder.perform(sqmObjects);

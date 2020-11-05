@@ -14,6 +14,7 @@ public:
 	virtual ~SqmParser() {}
 
 	SqmObjectList<SqmStructure> parse(QString const& input) const;
+	SqmObjectList<SqmStructure> parse(QByteArray& input) const;
 private:
 	SqmObjectList<SqmStructure> parse(QString const& input, int offset, int length) const;
 	int advanceOverLineBreaks(QString const& input, int offset, int length) const;

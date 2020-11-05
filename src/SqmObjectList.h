@@ -3,7 +3,9 @@
 
 #include "SqmStructure.h"
 #include "SqmArray.h"
-#include "SqmProperty.h"
+#include "SqmFloatProperty.h"
+#include "SqmIntProperty.h"
+#include "SqmStringProperty.h"
 
 #include <QHash>
 
@@ -29,8 +31,13 @@ public:
 
 	bool hasProperty(QString const& name) const;
 	std::shared_ptr<SqmProperty> getProperty(QString const& name) const;
-	QString const& getPropertyValue(QString const& name) const;
-	QString getPropertyValueAsString(QString const& name) const;
+
+	std::shared_ptr<SqmFloatProperty> getFloatProperty(QString const& name) const;
+	std::shared_ptr<SqmIntProperty> getIntProperty(QString const& name) const;
+	std::shared_ptr<SqmStringProperty> getStringProperty(QString const& name) const;
+
+	QString const& getPropertyValueAsString(QString const& name) const;
+	qint32 getPropertyValueAsInt(QString const& name) const;
 
 	bool hasArray(QString const& name) const;
 	SqmArray* getArray(QString const& name) const;

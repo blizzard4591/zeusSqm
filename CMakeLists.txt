@@ -45,6 +45,8 @@ endif()
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 
+find_package(OpenSSL REQUIRED)
+
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /MP")
 
@@ -159,13 +161,30 @@ file(GLOB_RECURSE ZEUSSQM_SOURCES_CPP ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(GLOB_RECURSE ZEUSSQM_SHARED_HEADERS ${PROJECT_SOURCE_DIR}/srcShared/*.h)
 file(GLOB_RECURSE ZEUSSQM_SHARED_SOURCES_CPP ${PROJECT_SOURCE_DIR}/srcShared/*.cpp)
 
+###
+# LibPBO
+#
+set(LIBPBO_BASEDIR "${PROJECT_SOURCE_DIR}/thirdParty/libpbo")
+include_directories("${LIBPBO_BASEDIR}/include/")
+set(LIBPBO_SRCS
+	"${LIBPBO_BASEDIR}/src/compress.cpp"
+	"${LIBPBO_BASEDIR}/src/cryptokey.cpp"
+	"${LIBPBO_BASEDIR}/src/entry.cpp"
+	"${LIBPBO_BASEDIR}/src/pbo.cpp"
+	"${LIBPBO_BASEDIR}/src/properties.cpp"
+	"${LIBPBO_BASEDIR}/src/signature.cpp"
+	"${LIBPBO_BASEDIR}/src/signature_generator.cpp"
+)
 
 # Add the executables
+add_library(libpbo STATIC ${LIBPBO_SRCS})
+
 add_executable(zeusSqm ${ZEUSSQM_HEADERS} ${ZEUSSQM_SOURCES_CPP} "${PROJECT_BINARY_DIR}/include/version.cpp")
 
 add_executable(zeusSqmVersionInfo ${ZEUSSQM_BUILDTOOLS_VERSIONINFO_HEADERS} ${ZEUSSQM_BUILDTOOLS_VERSIONINFO_SOURCES_CPP} "${PROJECT_BINARY_DIR}/include/version.cpp")
 
 target_include_directories(zeusSqm PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_include_directories(libpbo PRIVATE "${LIBPBO_BASEDIR}/include/libpbo")
 
 if (MSVC)
 #	set_target_properties(zeusSqm PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\"")
@@ -177,6 +196,9 @@ endif(MSVC)
 # Use the required modules from Qt 5.
 target_link_libraries(zeusSqm Qt5::Core)
 target_link_libraries(zeusSqm Qt5::Gui)
+target_link_libraries(zeusSqm libpbo)
+
+target_link_libraries(libpbo OpenSSL::Crypto)
 
 target_link_libraries(zeusSqmVersionInfo Qt5::Core)
 

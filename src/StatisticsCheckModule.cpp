@@ -70,8 +70,8 @@ std::shared_ptr<SqmObjectList<SqmStructure>> StatisticsCheckModule::perform(std:
 
 	// resistanceWest = 1 means PEACE, default
 	// resistanceEast = 0 means WAR, default
-	bool const independentAtWarWithBlufor = (classIntel->hasProperty(QStringLiteral("resistanceWest"))) && (classIntel->getPropertyValue(QStringLiteral("resistanceWest")).compare("0") == 0);
-	bool const independentAtWarWithOpfor = (!classIntel->hasProperty(QStringLiteral("resistanceEast"))) || (classIntel->getPropertyValue(QStringLiteral("resistanceEast")).compare("0") == 0);
+	bool const independentAtWarWithBlufor = (classIntel->hasProperty(QStringLiteral("resistanceWest"))) && (classIntel->getPropertyValueAsInt(QStringLiteral("resistanceWest")) == 0);
+	bool const independentAtWarWithOpfor = (!classIntel->hasProperty(QStringLiteral("resistanceEast"))) || (classIntel->getPropertyValueAsInt(QStringLiteral("resistanceEast")) == 0);
 
 	std::cout << "Current Side relations:" << std::endl;
 	std::cout << "BLUFOR vs. Independent: " << (independentAtWarWithBlufor ? "WAR" : "peace") << std::endl;

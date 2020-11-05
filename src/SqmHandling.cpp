@@ -37,8 +37,8 @@ SqmRoot SqmHandling::addVrShapeObjects(SqmRoot const& root, std::vector<Position
 }
 
 std::shared_ptr<SqmClass> SqmHandling::newPosition(int x, int y, int z) {
-	QStringList positions = { QString::number(x), QString::number(z), QString::number(y) };
-	std::shared_ptr<SqmArray> positionArray = std::make_shared<SqmArray>(QStringLiteral("position"), positions, false);
+	std::vector<SqmArrayContents::ArrayEntry> positions = { x, z, y };
+	std::shared_ptr<SqmArray> positionArray = std::make_shared<SqmArray>(QStringLiteral("position"), positions);
 	return std::make_shared<SqmClass>(QStringLiteral("PositionInfo"), SqmObjectList<SqmStructure>({ positionArray }));
 }
 
@@ -56,8 +56,8 @@ SqmRoot SqmHandling::nextItemIds(SqmRoot const& root, int& firstNextId, int requ
 		throw zeusops::exceptions::FormatErrorException() << "FORMAT ERROR: SQM does not contain class 'ItemIDProvider', is it complete/the correct file?";
 	}
 
-	std::shared_ptr<SqmProperty> nextIdProperty = classItemIdProvider->getProperty(QStringLiteral("nextID"));
-	std::shared_ptr<SqmProperty> newNextIdProperty = nextIdProperty->increment(requestedIdCount, &firstNextId);
+	std::shared_ptr<SqmIntProperty> nextIdProperty = classItemIdProvider->getIntProperty(QStringLiteral("nextID"));
+	std::shared_ptr<SqmIntProperty> newNextIdProperty = nextIdProperty->increment(requestedIdCount, &firstNextId);
 
 	return root->replace(*nextIdProperty, newNextIdProperty, root);
 }

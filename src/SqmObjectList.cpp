@@ -87,13 +87,46 @@ std::shared_ptr<SqmProperty> SqmObjectList<T>::getProperty(QString const& name) 
 }
 
 template <typename T>
-QString const& SqmObjectList<T>::getPropertyValue(QString const& name) const {
-	return getProperty(name)->getValue();
+std::shared_ptr<SqmFloatProperty> SqmObjectList<T>::getFloatProperty(QString const& name) const {
+	if (m_nameToObject.contains(name)) {
+		std::shared_ptr<SqmFloatProperty> property = std::dynamic_pointer_cast<SqmFloatProperty>(*m_nameToObject.constFind(name));
+		if (property != nullptr) {
+			return property;
+		}
+	}
+	throw;
 }
 
 template <typename T>
-QString SqmObjectList<T>::getPropertyValueAsString(QString const& name) const {
-	return getProperty(name)->getValueAsString();
+std::shared_ptr<SqmIntProperty> SqmObjectList<T>::getIntProperty(QString const& name) const {
+	if (m_nameToObject.contains(name)) {
+		std::shared_ptr<SqmIntProperty> property = std::dynamic_pointer_cast<SqmIntProperty>(*m_nameToObject.constFind(name));
+		if (property != nullptr) {
+			return property;
+		}
+	}
+	throw;
+}
+
+template <typename T>
+std::shared_ptr<SqmStringProperty> SqmObjectList<T>::getStringProperty(QString const& name) const {
+	if (m_nameToObject.contains(name)) {
+		std::shared_ptr<SqmStringProperty> property = std::dynamic_pointer_cast<SqmStringProperty>(*m_nameToObject.constFind(name));
+		if (property != nullptr) {
+			return property;
+		}
+	}
+	throw;
+}
+
+template <typename T>
+QString const& SqmObjectList<T>::getPropertyValueAsString(QString const& name) const {
+	return getStringProperty(name)->getValueAsString();
+}
+
+template <typename T>
+qint32 SqmObjectList<T>::getPropertyValueAsInt(QString const& name) const {
+	return getIntProperty(name)->getValueAsInt();
 }
 
 template <typename T>

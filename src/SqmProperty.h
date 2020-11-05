@@ -7,23 +7,24 @@
 
 class SqmProperty : public SqmStructure {
 public:
-	SqmProperty(QString const& name, QString const& value);
+	SqmProperty(QString const& name);
 	virtual ~SqmProperty() {}
 
-	QString const& getValue() const;
-	QString getValueAsString() const;
-	int getValueAsInt() const;
+	enum class Type {
+		STRING, FLOAT, INT
+	};
+	virtual Type getPropertyType() const = 0;
 
-	std::shared_ptr<SqmProperty> increment(int incrementBy, int* oldValue = nullptr) const;
+	virtual QString const& getValueAsString() const = 0;
+	virtual qint32 getValueAsInt() const = 0;
+	virtual float getValueAsFloat() const = 0;
 
-	virtual QString toSqm(int indentationLevel) const override;
 	virtual QString const& getName() const override;
 
 	static std::shared_ptr<SqmProperty> newStringProperty(QString const& name, QString const& value);
-	static std::shared_ptr<SqmProperty> newIntegerProperty(QString const& name, int value);
-private:
+	static std::shared_ptr<SqmProperty> newIntegerProperty(QString const& name, qint32 value);
+protected:
 	QString const m_name;
-	QString const m_value;
 };
 
 #endif
