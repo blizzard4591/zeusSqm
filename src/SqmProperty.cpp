@@ -13,7 +13,7 @@ QString const& SqmProperty::getName() const {
 }
 
 std::shared_ptr<SqmProperty> SqmProperty::newStringProperty(QString const& name, QString const& value) {
-	return std::make_shared<SqmStringProperty>(name, QStringLiteral("\"%1\"").arg(value));
+	return std::make_shared<SqmStringProperty>(name, value);
 }
 
 std::shared_ptr<SqmProperty> SqmProperty::newIntegerProperty(QString const& name, qint32 value) {

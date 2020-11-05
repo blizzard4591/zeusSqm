@@ -335,7 +335,7 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 					}
 					QString const value = input.mid(equalPos + 1, posOfClosingSemicolon - equalPos - 1);
 					if (value.at(0) == cQuote) {
-						objects.push_back(std::make_shared<SqmStringProperty>(name, value.mid(1, value.size() - 2)));
+						objects.push_back(std::make_shared<SqmStringProperty>(name, value.mid(1, value.size() - 2).replace("\"\"", "\"")));
 					} else if (value.indexOf('.') == -1) {
 						bool ok = false;
 						objects.push_back(std::make_shared<SqmIntProperty>(name, value.toInt(&ok)));

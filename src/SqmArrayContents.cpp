@@ -146,6 +146,8 @@ float SqmArrayContents::getEntryAsFloat(int index) const {
 
 	if (m_values.at(index).type == ArrayEntryType::FLOAT) {
 		return std::get<float>(m_values.at(index).content);
+	} else if (m_values.at(index).type == ArrayEntryType::INT) {
+		return std::get<qint32>(m_values.at(index).content);
 	}
 
 	throw;
