@@ -307,6 +307,7 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 						} else {
 							entry = SqmArrayContents::ArrayEntry(trimmed.toFloat(), trimmed);
 						}
+						arrayEntries.push_back(entry);
 					}
 					
 

@@ -132,7 +132,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline) const {
 				result.append(',');
 			}
 		}
-		result.append(indentString).append(QStringLiteral("}"));
+		result.append(QStringLiteral("}"));
 		return result;
 	}
 }
