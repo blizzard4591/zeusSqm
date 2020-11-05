@@ -31,3 +31,28 @@ QString SqmStructure::toFloatRepresentation(float f) {
 	}
 	return result;
 }
+
+QString SqmStructure::escapeQuotesInString(QString const& s) {
+	static const QChar cQ('"');
+	if (s.indexOf(cQ) == -1) return s;
+
+	QString result;
+	result.reserve(s.size());
+	static const QChar cS(' ');
+	static const QChar cB('\\');
+	static const QChar cn('n');
+	for (int pos = 0; pos < s.size(); ++pos) {
+		if (s.at(pos) == cQ) {
+			// Its either an " requiring escape, or a " \n " sequence
+			if ((pos + 5) < s.size() && (s.at(pos + 1) == cS) && (s.at(pos + 2) == cB) && (s.at(pos + 3) == cn) && (s.at(pos + 4) == cS) && (s.at(pos + 5) == cQ)) {
+				for (int i = 0; i < 6; ++i) result.append(s.at(pos + i));
+				pos += 5;
+			} else {
+				result.append(cQ).append(cQ);
+			}
+		} else {
+			result.append(s.at(pos));
+		}
+	}
+	return result;
+}

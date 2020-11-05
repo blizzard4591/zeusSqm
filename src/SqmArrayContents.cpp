@@ -84,7 +84,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline) const {
 			}
 			case ArrayEntryType::STRING:
 			{
-				result.append(indentString).append('\t').append('"').append(std::get<QString>(m_values.at(i).content)).append('"');
+				result.append(indentString).append('\t').append('"').append(SqmStructure::escapeQuotesInString(std::get<QString>(m_values.at(i).content))).append('"');
 				break;
 			}
 			default:
@@ -123,7 +123,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline) const {
 			}
 			case ArrayEntryType::STRING:
 			{
-				result.append('"').append(std::get<QString>(m_values.at(i).content)).append('"');
+				result.append('"').append(SqmStructure::escapeQuotesInString(std::get<QString>(m_values.at(i).content))).append('"');
 				break;
 			}
 			default:

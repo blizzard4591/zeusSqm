@@ -24,6 +24,7 @@ public:
 	};
 
 	static QString toFloatRepresentation(float f);
+	static QString escapeQuotesInString(QString const& s);
 protected:
 	int64_t const uniqueId;
 	static int64_t getNextUniqueId();

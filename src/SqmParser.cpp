@@ -366,11 +366,17 @@ int SqmParser::advanceOverLineBreaks(QString const& input, int offset, int lengt
 int SqmParser::findMatchingQuote(QString const& input, int posOfOpeningQuote, int length) const {
 	int pos = posOfOpeningQuote + 1;
 	static const QChar cQ('"');
+	static const QChar cS(' ');
+	static const QChar cB('\\');
+	static const QChar cn('n');
 	while (pos < length) {
 		if (input.at(pos) == cQ) {
 			// Either string ends here, or its an "" escape
 			if ((pos + 1) < length && (input.at(pos + 1) == cQ)) {
 				pos += 2;
+				continue;
+			} else if ((pos + 5) < length && (input.at(pos + 1) == cS) && (input.at(pos + 2) == cB) && (input.at(pos + 3) == cn) && (input.at(pos + 4) == cS) && (input.at(pos + 5) == cQ)) {
+				pos += 6;
 				continue;
 			} else {
 				return pos;

@@ -20,5 +20,5 @@ float SqmStringProperty::getValueAsFloat() const {
 
 QString SqmStringProperty::toSqm(int indentationLevel) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
-	return QStringLiteral("%1%2=\"%3\";\r\n").arg(indentString).arg(getName()).arg(QString(m_value).replace(QChar('"'), QStringLiteral("\"\"")));
+	return QStringLiteral("%1%2=\"%3\";\r\n").arg(indentString).arg(getName()).arg(escapeQuotesInString(m_value));
 }
