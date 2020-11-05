@@ -1,5 +1,7 @@
 #include "SqmStringProperty.h"
 
+#include <QString>
+
 SqmStringProperty::SqmStringProperty(QString const& name, QString const& value) : SqmProperty(name), m_value(value) {
 	//
 }
@@ -18,5 +20,5 @@ float SqmStringProperty::getValueAsFloat() const {
 
 QString SqmStringProperty::toSqm(int indentationLevel) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
-	return QStringLiteral("%1%2=\"%3\";\r\n").arg(indentString).arg(getName()).arg(m_value);
+	return QStringLiteral("%1%2=\"%3\";\r\n").arg(indentString).arg(getName()).arg(QString(m_value).replace(QChar('"'), QStringLiteral("\"\"")));
 }

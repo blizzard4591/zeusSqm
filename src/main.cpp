@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (args.isEmpty() || (args.size() < 2 && !parser.isSet(inplaceOption))) {
-		parser.showHelp(-1);
+		parser.showHelp(EXIT_FAILURE);
 	}
 
 	// HEADER
@@ -98,11 +98,16 @@ int main(int argc, char *argv[]) {
 			std::cerr << "pbounpack : " << e.what() << std::endl;
 			return EXIT_FAILURE;
 		}
+
+		if (missionBinaryData.isEmpty()) {
+			std::cerr << "Failed to find 'mission.sqm' in PBO, can not continue." << std::endl;
+			return EXIT_FAILURE;
+		}
 	} else {
 		QFile inputFile(args.at(0));
 		if (!inputFile.open(QFile::ReadOnly)) {
 			std::cerr << "Failed to open input file '" << args.at(0).toStdString() << "'. Terminating..." << std::endl;
-			return -1;
+			return EXIT_FAILURE;
 		}
 
 		missionBinaryData = inputFile.readAll();
@@ -121,15 +126,15 @@ int main(int argc, char *argv[]) {
 	}
 
 	SqmParser sqmParser;
+	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects;
 	if (missionBinaryData.size() > 0 && missionBinaryData.at(0) == '\0') {
-		sqmParser.parse(missionBinaryData);
-		return 0;
+		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionBinaryData));
 	} else if (missionFileData.size() == 0) {
-		std::cerr << "This SQM is empty :(" << std::endl;
-		return -2;
+		std::cerr << "Input SQM file is empty :(" << std::endl;
+		return EXIT_FAILURE;
+	} else {
+		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
 	}
-
-	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
 	
 	sqmObjects = markerCheck.perform(sqmObjects);
 	sqmObjects = statisticsCheck.perform(sqmObjects);
@@ -151,7 +156,7 @@ int main(int argc, char *argv[]) {
 	QTextStream outputStream(&outputFile);
 	outputStream << rebuildMissionFileData;
 	outputFile.close();
-	std::cout << "Saved SQM to '" << outputFile.fileName().toStdString() << "'." << std::endl;
+	std::cout << std::endl << "Saved SQM to '" << outputFile.fileName().toStdString() << "'." << std::endl;
 
 	std::cout << "Bye bye!" << std::endl;
     return 0;

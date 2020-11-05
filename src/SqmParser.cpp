@@ -5,6 +5,8 @@
 
 #include <QDataStream>
 
+#include "exceptions/FormatErrorException.h"
+
 SqmParser::SqmParser() {
 	//
 }
@@ -92,7 +94,7 @@ SqmArrayContents::ArrayEntry parseArrayElement(QByteArray const& data, int& offs
 	}
 	default:
 		std::cerr << "Unhandled Type '" << (int)type << "' in Array!" << std::endl;
-		throw;
+		throw zeusops::exceptions::FormatErrorException() << "Unhandled Type '" << (int)type << "' in Array!";
 	}
 }
 
@@ -117,9 +119,8 @@ std::shared_ptr<SqmStructure> parseClassEntry(QByteArray const& data, int& offse
 	switch (id) {
 	case 0:
 	{
-		QString className = parseString(data, offset);
+		QString const className = parseString(data, offset);
 		int classOffset = parseUInt32(data, offset);
-		std::cout << "Found class '" << className.toStdString() << "' with offset " << classOffset << "." << std::endl;
 		return std::make_shared<SqmClass>(className, parseClassBody(data, classOffset));
 	}
 	case 1:
@@ -133,26 +134,23 @@ std::shared_ptr<SqmStructure> parseClassEntry(QByteArray const& data, int& offse
 		{
 			// String
 			QString value = parseString(data, offset);
-			std::cout << "Parsed string property '" << propertyName.toStdString() << "' with value '" << value.toStdString() << "'." << std::endl;
 			return std::make_shared<SqmStringProperty>(propertyName, value);
 		}
 		case 1:
 		{
 			// Float
 			float const value = parseFloat(data, offset);
-			std::cout << "Parsed float property '" << propertyName.toStdString() << "' with value '" << value << "'." << std::endl;
 			return std::make_shared<SqmFloatProperty>(propertyName, value);
 		}
 		case 2:
 		{
 			// Long
 			qint32 const value = parseInt32(data, offset);
-			std::cout << "Parsed long property '" << propertyName.toStdString() << "' with value '" << value << "'." << std::endl;
 			return std::make_shared<SqmIntProperty>(propertyName, value);
 		}
 		default:
 			std::cerr << "Unhandled SubId '" << (int)subId << "' in ClassEntry!" << std::endl;
-			throw;
+			throw zeusops::exceptions::FormatErrorException() << "Unhandled SubId '" << (int)subId << "' in ClassEntry!";
 		}
 		break;
 	}
@@ -164,7 +162,7 @@ std::shared_ptr<SqmStructure> parseClassEntry(QByteArray const& data, int& offse
 	default:
 	{
 		std::cerr << "Unhandled ClassEntry ID '" << (int)id << "' in ClassEntry!" << std::endl;
-		throw;
+		throw zeusops::exceptions::FormatErrorException() << "Unhandled ClassEntry ID '" << (int)id << "' in ClassEntry!";
 	}
 	}
 }
@@ -181,7 +179,7 @@ SqmObjectList<SqmStructure> parseClassBody(QByteArray const& data, int& offset) 
 
 	if ((!inheritedClassname.isNull()) && (!inheritedClassname.isEmpty())) {
 		std::cout << "Parsed class with inherited class '" << inheritedClassname.toStdString() << "'." << std::endl;
-		throw;
+		throw zeusops::exceptions::FormatErrorException() << "Parsed class with inherited class '" << inheritedClassname.toStdString() << "'.";
 	}
 
 	return SqmObjectList<SqmStructure>(items);
@@ -190,11 +188,9 @@ SqmObjectList<SqmStructure> parseClassBody(QByteArray const& data, int& offset) 
 SqmObjectList<SqmStructure> SqmParser::parse(QByteArray& input) const {
 	auto t1 = std::chrono::high_resolution_clock::now();
 
-	// https://community.bistudio.com/wiki/raP_File_Format_-_Elite#CompressedInteger
-	// https://community.bistudio.com/wiki/raP_File_Format_-_OFP#CompressedInteger
-
 	if ((input.at(0) != '\0') || (input.at(1) != 'r') || (input.at(2) != 'a') || (input.at(3) != 'P')) {
 		std::cerr << "Header of SQM file corrupted, either this is not a binarized SQM or its broken." << std::endl;
+		throw zeusops::exceptions::FormatErrorException() << "Header of SQM file corrupted, either this is not a binarized SQM or its broken.";
 	}
 
 	// Skip first 4 bytes (header)
@@ -212,7 +208,7 @@ SqmObjectList<SqmStructure> SqmParser::parse(QByteArray& input) const {
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	std::cout << "Parsing SQM took " << duration << "ms." << std::endl;
+	std::cout << "Parsing binarized SQM took " << duration << "ms." << std::endl;
 
 	return result;
 }

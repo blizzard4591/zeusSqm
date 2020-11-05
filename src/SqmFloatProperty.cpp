@@ -1,6 +1,6 @@
 #include "SqmFloatProperty.h"
 
-SqmFloatProperty::SqmFloatProperty(QString const& name, float value) : SqmProperty(name), m_value(value), m_valueString(QString::number(value)) {
+SqmFloatProperty::SqmFloatProperty(QString const& name, float value) : SqmProperty(name), m_value(value), m_valueString(toFloatRepresentation(value)) {
 	//
 }
 
@@ -13,7 +13,7 @@ QString const& SqmFloatProperty::getValueAsString() const {
 }
 
 qint32 SqmFloatProperty::getValueAsInt() const {
-	throw;
+	return m_value;
 }
 
 float SqmFloatProperty::getValueAsFloat() const {

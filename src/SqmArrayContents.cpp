@@ -1,5 +1,7 @@
 #include "SqmArrayContents.h"
 
+#include "SqmStructure.h"
+
 SqmArrayContents::ArrayEntry::ArrayEntry() : type(ArrayEntryType::STRING), stringValue(), content() {
 	//
 }
@@ -62,7 +64,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline) const {
 				if (!m_values.at(i).stringValue.isEmpty()) {
 					result.append(indentString).append('\t').append(m_values.at(i).stringValue);
 				} else {
-					result.append(indentString).append('\t').append(QString::number(std::get<float>(m_values.at(i).content)));
+					result.append(indentString).append('\t').append(SqmStructure::toFloatRepresentation(std::get<float>(m_values.at(i).content)));
 				}
 				break;
 			}
@@ -105,7 +107,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline) const {
 				if (!m_values.at(i).stringValue.isEmpty()) {
 					result.append(m_values.at(i).stringValue);
 				} else {
-					result.append(QString::number(std::get<float>(m_values.at(i).content)));
+					result.append(SqmStructure::toFloatRepresentation(std::get<float>(m_values.at(i).content)));
 				}
 				break;
 			}

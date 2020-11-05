@@ -1,7 +1,9 @@
 #include "SqmObjectList.h"
 
 #include "SqmClass.h"
+#include "exceptions/InternalErrorException.h"
 
+#include <iostream>
 #include <memory>
 
 template <typename T>
@@ -82,8 +84,9 @@ std::shared_ptr<SqmProperty> SqmObjectList<T>::getProperty(QString const& name) 
 		if (property != nullptr) {
 			return property;
 		}
+		throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' is not of type PROPERTY!";
 	}
-	throw;
+	throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' does not exist!";
 }
 
 template <typename T>
@@ -93,8 +96,9 @@ std::shared_ptr<SqmFloatProperty> SqmObjectList<T>::getFloatProperty(QString con
 		if (property != nullptr) {
 			return property;
 		}
+		throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' is not of type FLOAT!";
 	}
-	throw;
+	throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' does not exist!";
 }
 
 template <typename T>
@@ -104,8 +108,10 @@ std::shared_ptr<SqmIntProperty> SqmObjectList<T>::getIntProperty(QString const& 
 		if (property != nullptr) {
 			return property;
 		}
+		std::cerr << "Property '" << name.toStdString() << "' is not of type INT!";
+		throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' is not of type INT!";
 	}
-	throw;
+	throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' does not exist!";
 }
 
 template <typename T>
@@ -115,8 +121,9 @@ std::shared_ptr<SqmStringProperty> SqmObjectList<T>::getStringProperty(QString c
 		if (property != nullptr) {
 			return property;
 		}
+		throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' is not of type STRING!";
 	}
-	throw;
+	throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' does not exist!";
 }
 
 template <typename T>
@@ -126,7 +133,7 @@ QString const& SqmObjectList<T>::getPropertyValueAsString(QString const& name) c
 
 template <typename T>
 qint32 SqmObjectList<T>::getPropertyValueAsInt(QString const& name) const {
-	return getIntProperty(name)->getValueAsInt();
+	return getProperty(name)->getValueAsInt();
 }
 
 template <typename T>

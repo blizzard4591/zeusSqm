@@ -22,9 +22,10 @@ public:
 		ARRAY,
 		CLASS
 	};
+
+	static QString toFloatRepresentation(float f);
 protected:
 	int64_t const uniqueId;
-
 	static int64_t getNextUniqueId();
 };
 

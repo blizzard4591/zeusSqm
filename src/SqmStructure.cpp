@@ -20,3 +20,14 @@ int64_t SqmStructure::getUniqueId() const {
 bool SqmStructure::operator ==(SqmStructure const& other) const {
 	return (uniqueId == other.uniqueId);
 }
+
+QString SqmStructure::toFloatRepresentation(float f) {
+	QString result = QString::number(f, 'g', 8);
+	int pos = result.indexOf(QStringLiteral("e-0"));
+	if (pos > -1) {
+		if (result.at(pos + 3) != '0') {
+			result.insert(pos + 3, '0');
+		}
+	}
+	return result;
+}
