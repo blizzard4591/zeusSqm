@@ -87,12 +87,14 @@ std::shared_ptr<SqmObjectList<SqmStructure>> StatisticsCheckModule::perform(std:
 	SqmObjectList<SqmClass> zeuses = classEntities->onlyClasses().filter([](std::shared_ptr<SqmClass> const& classItem) {
 		if (!classItem->hasProperty("type")) return false;
 		if (classItem->getPropertyValueAsString("type").compare("VirtualCurator_F") != 0) return false;
+		if (!classItem->hasProperty("description")) return false;
 		if (classItem->getPropertyValueAsString("description").compare("Zeus") != 0) return false;
 		return true;
 	});
 	SqmObjectList<SqmClass> moderators = classEntities->onlyClasses().filter([](std::shared_ptr<SqmClass> const& classItem) {
 		if (!classItem->hasProperty("type")) return false;
 		if (classItem->getPropertyValueAsString("type").compare("VirtualCurator_F") != 0) return false;
+		if (!classItem->hasProperty("description")) return false;
 		if (classItem->getPropertyValueAsString("description").compare("Mod") != 0) return false;
 		return true;
 	});

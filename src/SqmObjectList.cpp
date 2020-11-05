@@ -6,6 +6,12 @@
 #include <iostream>
 #include <memory>
 
+#define LOG_AND_THROW(exception, message) \
+do {                                                            \
+	std::cerr << message << std::endl;                          \
+	throw exception() << message;                               \
+} while (false)
+
 template <typename T>
 SqmObjectList<T>::SqmObjectList(std::vector<std::shared_ptr<T>> const& objects) : m_objects(objects), m_nameToObject(createNameToObjectMapping(objects)) {
 	//
@@ -84,9 +90,9 @@ std::shared_ptr<SqmProperty> SqmObjectList<T>::getProperty(QString const& name) 
 		if (property != nullptr) {
 			return property;
 		}
-		throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' is not of type PROPERTY!";
+		LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Property '" << name.toStdString() << "' is not of type PROPERTY!");
 	}
-	throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' does not exist!";
+	LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Property '" << name.toStdString() << "' does not exist!");
 }
 
 template <typename T>
@@ -96,9 +102,9 @@ std::shared_ptr<SqmFloatProperty> SqmObjectList<T>::getFloatProperty(QString con
 		if (property != nullptr) {
 			return property;
 		}
-		throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' is not of type FLOAT!";
+		LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Property '" << name.toStdString() << "' is not of type FLOAT!");
 	}
-	throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' does not exist!";
+	LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Property '" << name.toStdString() << "' does not exist!");
 }
 
 template <typename T>
@@ -108,10 +114,9 @@ std::shared_ptr<SqmIntProperty> SqmObjectList<T>::getIntProperty(QString const& 
 		if (property != nullptr) {
 			return property;
 		}
-		std::cerr << "Property '" << name.toStdString() << "' is not of type INT!";
-		throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' is not of type INT!";
+		LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Property '" << name.toStdString() << "' is not of type INT!");
 	}
-	throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' does not exist!";
+	LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Property '" << name.toStdString() << "' does not exist!");
 }
 
 template <typename T>
@@ -121,9 +126,9 @@ std::shared_ptr<SqmStringProperty> SqmObjectList<T>::getStringProperty(QString c
 		if (property != nullptr) {
 			return property;
 		}
-		throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' is not of type STRING!";
+		LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Property '" << name.toStdString() << "' is not of type STRING!");
 	}
-	throw zeusops::exceptions::InternalErrorException() << "Property '" << name.toStdString() << "' does not exist!";
+	LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Property '" << name.toStdString() << "' does not exist!");
 }
 
 template <typename T>
