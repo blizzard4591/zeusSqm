@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <QDataStream>
+#include <QTextStream>
 
 #include "exceptions/FormatErrorException.h"
 
@@ -20,43 +21,91 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input) const {
 	return root;
 }
 
-float parseFloat(QByteArray const& data, int& offset) {
+QByteArray SqmParser::stripComments(QByteArray const& input) {
+	if (hasBinarizedSqmHeader(input)) {
+		return input;
+	}
+
+	QTextStream stream(input);
+	QString const missionFileData = stream.readAll();
+
+	QString const strippedMission = stripComments(missionFileData);
+
+	QByteArray outputData;
+	QTextStream outputStream(&outputData);
+	outputStream.setCodec("UTF-8");
+	outputStream << strippedMission;
+	outputStream.flush();
+
+	return outputData;
+}
+
+QString SqmParser::stripComments(QString const& input) {
+	QString const newLine = (input.count(QStringLiteral("\r\n")) > 0) ? QStringLiteral("\r\n") : QStringLiteral("\n");
+	QString result;
+	result.reserve(input.size());
+
+	int offset = 0;
+	int nextNewline = input.indexOf(newLine, offset);
+	while (nextNewline > -1) {
+		int pos = offset;
+		while (input.at(pos) == ' ' || input.at(pos) == '\t') {
+			++pos;
+		}
+		if (input.at(pos) == '/' && input.at(pos + 1) == '/') {
+			// this is a comment line, strip.
+		} else if (input.at(pos) == '#') {
+			// this is a pragma line, strip.
+		} else {
+			result.append(input.mid(offset, nextNewline - offset + newLine.size()));
+		}
+		offset = nextNewline + newLine.size();
+		nextNewline = input.indexOf(newLine, offset);
+	}
+	
+	if (offset < input.size()) {
+		result.append(input.mid(offset));
+	}
+	return result;
+}
+
+float SqmParser::parseFloat(QByteArray const& data, int& offset) {
 	float result = *reinterpret_cast<float const*>(data.constData() + offset);
 	offset += 4;
 	return result;
 }
 
-qint32 parseInt32(QByteArray const& data, int& offset) {
+qint32 SqmParser::parseInt32(QByteArray const& data, int& offset) {
 	qint32 result = *reinterpret_cast<qint32 const*>(data.constData() + offset);
 	offset += 4;
 	return result;
 }
 
-quint32 parseUInt32(QByteArray const& data, int& offset) {
+quint32 SqmParser::parseUInt32(QByteArray const& data, int& offset) {
 	quint32 result = *reinterpret_cast<quint32 const*>(data.constData() + offset);
 	offset += 4;
 	return result;
 }
 
-quint8 parseUint8(QByteArray const& data, int& offset) {
+quint8 SqmParser::parseUint8(QByteArray const& data, int& offset) {
 	quint8 result = *reinterpret_cast<quint8 const*>(data.constData() + offset);
 	offset += 1;
 	return result;
 }
 
-quint64 parseCompressedInteger(QByteArray const& data, int& offset) {
+quint64 SqmParser::parseCompressedInteger(QByteArray const& data, int& offset) {
 	quint64 result = 0;
 	quint8 v = parseUint8(data, offset);
 	result += v;
 	while (v & 0x80) {
 		v = parseUint8(data, offset);
-		result += (v - 1) * 0x80uL;
+		result += (v - 1uLL) * 0x80uLL;
 	}
 
 	return result;
 }
 
-QString parseString(QByteArray const& data, int& offset) {
+QString SqmParser::parseString(QByteArray const& data, int& offset) {
 	QByteArray stringBytes;
 	char c;
 	c = data.at(offset++);
@@ -67,10 +116,7 @@ QString parseString(QByteArray const& data, int& offset) {
 	return QString(stringBytes);
 }
 
-std::shared_ptr<SqmArray> parseArray(QByteArray const& data, int& offset);
-SqmArrayContents parseArrayContents(QByteArray const& data, int& offset);
-
-SqmArrayContents::ArrayEntry parseArrayElement(QByteArray const& data, int& offset) {
+SqmArrayContents::ArrayEntry SqmParser::parseArrayElement(QByteArray const& data, int& offset) {
 	quint8 const type = parseUint8(data, offset);
 	switch (type) {
 	case 0:
@@ -98,7 +144,7 @@ SqmArrayContents::ArrayEntry parseArrayElement(QByteArray const& data, int& offs
 	}
 }
 
-SqmArrayContents parseArrayContents(QByteArray const& data, int& offset) {
+SqmArrayContents SqmParser::parseArrayContents(QByteArray const& data, int& offset) {
 	quint64 const entryCount = parseCompressedInteger(data, offset);
 	std::vector<SqmArrayContents::ArrayEntry> entries;
 	for (quint64 i = 0; i < entryCount; ++i) {
@@ -107,14 +153,12 @@ SqmArrayContents parseArrayContents(QByteArray const& data, int& offset) {
 	return SqmArrayContents(entries);
 }
 
-std::shared_ptr<SqmArray> parseArray(QByteArray const& data, int& offset) {
+std::shared_ptr<SqmArray> SqmParser::parseArray(QByteArray const& data, int& offset) {
 	QString const name = parseString(data, offset);
 	return std::make_shared<SqmArray>(name, parseArrayContents(data, offset));
 }
 
-SqmObjectList<SqmStructure> parseClassBody(QByteArray const& data, int& offset);
-
-std::shared_ptr<SqmStructure> parseClassEntry(QByteArray const& data, int& offset) {
+std::shared_ptr<SqmStructure> SqmParser::parseClassEntry(QByteArray const& data, int& offset) {
 	quint8 const id = parseUint8(data, offset);
 	switch (id) {
 	case 0:
@@ -167,7 +211,7 @@ std::shared_ptr<SqmStructure> parseClassEntry(QByteArray const& data, int& offse
 	}
 }
 
-SqmObjectList<SqmStructure> parseClassBody(QByteArray const& data, int& offset) {
+SqmObjectList<SqmStructure> SqmParser::parseClassBody(QByteArray const& data, int& offset) {
 	QString inheritedClassname = parseString(data, offset);
 
 	quint64 const entryCount = parseCompressedInteger(data, offset);
@@ -185,10 +229,15 @@ SqmObjectList<SqmStructure> parseClassBody(QByteArray const& data, int& offset) 
 	return SqmObjectList<SqmStructure>(items);
 }
 
+bool SqmParser::hasBinarizedSqmHeader(QByteArray const& file) {
+	if (file.size() < 4) return false;
+	return ((file.at(0) == '\0') && (file.at(1) == 'r') && (file.at(2) == 'a') && (file.at(3) == 'P'));
+}
+
 SqmObjectList<SqmStructure> SqmParser::parse(QByteArray& input) const {
 	auto t1 = std::chrono::high_resolution_clock::now();
 
-	if ((input.at(0) != '\0') || (input.at(1) != 'r') || (input.at(2) != 'a') || (input.at(3) != 'P')) {
+	if (!hasBinarizedSqmHeader(input)) {
 		std::cerr << "Header of SQM file corrupted, either this is not a binarized SQM or its broken." << std::endl;
 		throw zeusops::exceptions::FormatErrorException() << "Header of SQM file corrupted, either this is not a binarized SQM or its broken.";
 	}

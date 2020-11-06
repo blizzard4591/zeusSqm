@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <variant>
 
 #include "MarkerCheckModule.h"
 #include "StatisticsCheckModule.h"
@@ -36,6 +37,9 @@ int main(int argc, char *argv[]) {
 	QCommandLineOption extractFromPboOption(QStringList() << "extractFromPbo", QCoreApplication::translate("main", "Extract the mission.sqm from PBO file and save it unchanged."), QCoreApplication::translate("main", "extracted mission.sqm"));
 	parser.addOption(extractFromPboOption);
 
+	QCommandLineOption stripCommentsOption(QStringList() << "stripComments", QCoreApplication::translate("main", "Remove comments from SQMs, even from the 'unchanged' extract from PBO."));
+	parser.addOption(stripCommentsOption);
+
 	MarkerCheckModule markerCheck;
 	markerCheck.registerOptions(parser);
 
@@ -62,55 +66,43 @@ int main(int argc, char *argv[]) {
 	std::cout << std::endl;
 
 	QByteArray missionBinaryData;
-	QString missionFileData;
-
 	QString const inputFilename = args.at(0);
-	if (inputFilename.endsWith(".pbo")) {
+	bool const isFromPbo = inputFilename.endsWith(".pbo");
+	if (isFromPbo) {
 		PBO::PBO pbo_file(inputFilename.toStdString());
 		try {
 			pbo_file.unpack();
 
+			bool foundMission = false;
 			for (auto entry : pbo_file) {
 				auto size = entry->get_data_size();
 				auto offset = entry->get_data_offset();
 
 				if (size > 0) {
-					//std::vector<char> tempstorage(size);
-					missionBinaryData = QByteArray(size, '\0');
-
 					auto outfilename = entry->get_path().string();
 					if (outfilename != "mission.sqm") {
 						continue;
 					}
 
+					foundMission = true;
+					missionBinaryData = QByteArray(size, '\0');
+
 					std::ifstream input(inputFilename.toStdString(), std::ios_base::binary);
 					input.seekg(offset);
 					input.read(missionBinaryData.data(), size);
-					missionFileData = QString(missionBinaryData);
-
 					input.close();
+
 					std::cout << "Loaded mission.sqm (" << size << " Bytes) from PBO." << std::endl;
-					if (parser.isSet(extractFromPboOption)) {
-						QFile pboSqm(parser.value(extractFromPboOption));
-						if (pboSqm.open(QFile::WriteOnly)) {
-							pboSqm.write(missionBinaryData);
-							pboSqm.close();
-							std::cout << "Saved mission.sqm from PBO to '" << parser.value(extractFromPboOption).toStdString() << "' (untouched)." << std::endl;
-						} else {
-							std::cout << "Failed to save mission.sqm from PBO to '" << parser.value(extractFromPboOption).toStdString() << "', is it writable?" << std::endl;
-							return EXIT_FAILURE;
-						}
-					}
 					break;
 				}
 			}
+
+			if (!foundMission) {
+				std::cerr << "Could not locate 'mission.sqm' in PBO, is the archive complete?" << std::endl;
+				return EXIT_FAILURE;
+			}
 		} catch (std::exception const& e) {
 			std::cerr << "pbounpack : " << e.what() << std::endl;
-			return EXIT_FAILURE;
-		}
-
-		if (missionBinaryData.isEmpty()) {
-			std::cerr << "Failed to find 'mission.sqm' in PBO, can not continue." << std::endl;
 			return EXIT_FAILURE;
 		}
 	} else {
@@ -121,10 +113,6 @@ int main(int argc, char *argv[]) {
 		}
 
 		missionBinaryData = inputFile.readAll();
-		inputFile.seek(0);
-		QTextStream stream(&inputFile);
-		missionFileData = stream.readAll();
-		inputFile.close();
 	}
 
 	if (!markerCheck.checkArguments(parser)) {
@@ -135,15 +123,33 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
+	// Strip comments if requested
+	if (parser.isSet(stripCommentsOption)) {
+		missionBinaryData = SqmParser::stripComments(missionBinaryData);
+	}
+
+	if (isFromPbo && parser.isSet(extractFromPboOption)) {
+		QFile pboSqm(parser.value(extractFromPboOption));
+		if (pboSqm.open(QFile::WriteOnly)) {
+			pboSqm.write(missionBinaryData);
+			pboSqm.close();
+			std::cout << "Saved mission.sqm from PBO to '" << parser.value(extractFromPboOption).toStdString() << "' (untouched)." << std::endl;
+		} else {
+			std::cout << "Failed to save mission.sqm from PBO to '" << parser.value(extractFromPboOption).toStdString() << "', is it writable?" << std::endl;
+			return EXIT_FAILURE;
+		}
+	}
+
 	bool useSimpleNewline = false;
+	bool const isBinarized = SqmParser::hasBinarizedSqmHeader(missionBinaryData);
 	SqmParser sqmParser;
 	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects;
-	if (missionBinaryData.size() > 0 && missionBinaryData.at(0) == '\0') {
+	if (isBinarized) {
 		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionBinaryData));
-	} else if (missionFileData.size() == 0) {
-		std::cerr << "Input SQM file is empty :(" << std::endl;
-		return EXIT_FAILURE;
 	} else {
+		QTextStream stream(missionBinaryData);
+		QString const missionFileData = stream.readAll();
+
 		// Check if the input used Linux-style \n newlines.
 		useSimpleNewline = missionFileData.count("\r\n") == 0;
 		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
