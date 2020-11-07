@@ -42,6 +42,8 @@ public:
 	bool hasArray(QString const& name) const;
 	SqmArray* getArray(QString const& name) const;
 
+	virtual void toSqmStageOne(QByteArray& output) const override;
+	virtual void toSqmStageTwo(QByteArray& output) const override;
 	virtual QString toSqm(int indentationLevel) const override;
 	virtual QString const& getName() const override;
 

@@ -10,6 +10,9 @@ public:
 	SqmStructure(SqmStructure const& other);
 	virtual ~SqmStructure() {}
 
+	virtual void toSqmStageOne(QByteArray& output) const = 0;
+	virtual void toSqmStageTwo(QByteArray& output) const = 0;
+
 	virtual QString toSqm(int indentationLevel) const = 0;
 	virtual QString const& getName() const = 0;
 

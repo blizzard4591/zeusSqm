@@ -17,6 +17,16 @@ std::vector<std::shared_ptr<T>> const& SqmObjectList<T>::getObjects() const {
 }
 
 template <typename T>
+void SqmObjectList<T>::toSqmStageOne(QByteArray& output) const {
+
+}
+
+template <typename T>
+void SqmObjectList<T>::toSqmStageTwo(QByteArray& output) const {
+
+}
+
+template <typename T>
 QString SqmObjectList<T>::toSqm(int indentationLevel) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
 

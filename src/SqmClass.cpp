@@ -4,6 +4,14 @@ SqmClass::SqmClass(QString const& name, SqmObjectList const& objects) : SqmObjec
 	//
 }
 
+void SqmClass::toSqmStageOne(QByteArray& output) const {
+
+}
+
+void SqmClass::toSqmStageTwo(QByteArray& output) const {
+
+}
+
 QString SqmClass::toSqm(int indentationLevel) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
 

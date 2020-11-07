@@ -8,6 +8,14 @@ SqmArray::SqmArray(QString const& name, SqmArrayContents const& entries) : SqmAr
 	//
 }
 
+void SqmArray::toSqmStageOne(QByteArray& output) const {
+
+}
+
+void SqmArray::toSqmStageTwo(QByteArray& output) const {
+
+}
+
 QString SqmArray::toSqm(int indentationLevel) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
 

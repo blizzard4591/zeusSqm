@@ -18,6 +18,14 @@ float SqmStringProperty::getValueAsFloat() const {
 	throw;
 }
 
+void SqmStringProperty::toSqmStageOne(QByteArray& output) const {
+
+}
+
+void SqmStringProperty::toSqmStageTwo(QByteArray& output) const {
+
+}
+
 QString SqmStringProperty::toSqm(int indentationLevel) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
 	return QStringLiteral("%1%2=\"%3\";\r\n").arg(indentString).arg(getName()).arg(escapeQuotesInString(m_value));

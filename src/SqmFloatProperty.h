@@ -19,6 +19,8 @@ public:
 	virtual qint32 getValueAsInt() const override;
 	virtual float getValueAsFloat() const override;
 
+	virtual void toSqmStageOne(QByteArray& output) const override;
+	virtual void toSqmStageTwo(QByteArray& output) const override;
 	virtual QString toSqm(int indentationLevel) const override;
 private:
 	float const m_value;
