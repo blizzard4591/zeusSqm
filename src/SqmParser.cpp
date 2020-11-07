@@ -27,6 +27,7 @@ QByteArray SqmParser::stripComments(QByteArray const& input) {
 	}
 
 	QTextStream stream(input);
+	stream.setCodec("UTF-8");
 	QString const missionFileData = stream.readAll();
 
 	QString const strippedMission = stripComments(missionFileData);

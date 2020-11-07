@@ -148,6 +148,7 @@ int main(int argc, char *argv[]) {
 		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionBinaryData));
 	} else {
 		QTextStream stream(missionBinaryData);
+		stream.setCodec("UTF-8");
 		QString const missionFileData = stream.readAll();
 
 		// Check if the input used Linux-style \n newlines.
