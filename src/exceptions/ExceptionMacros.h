@@ -1,6 +1,8 @@
 #ifndef ZEUSOPS_EXCEPTIONS_EXCEPTIONMACROS_H_
 #define ZEUSOPS_EXCEPTIONS_EXCEPTIONMACROS_H_
 
+#include <iostream>
+
 /*!
  * Macro to generate descendant exception classes. As all classes are nearly the same, this makes changing common
  * features much easier.
@@ -28,5 +30,11 @@ virtual const char* name() const NOEXCEPT override { \
 }; \
 } \
 }
+
+#define LOG_AND_THROW(exception, message) \
+do {                                                            \
+	std::cerr << message << std::endl;                          \
+	throw exception() << message;                               \
+} while (false)
 
 #endif /* ZEUSOPS_EXCEPTIONS_EXCEPTIONMACROS_H_ */

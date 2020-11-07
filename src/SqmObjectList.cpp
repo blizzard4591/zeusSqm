@@ -6,12 +6,6 @@
 #include <iostream>
 #include <memory>
 
-#define LOG_AND_THROW(exception, message) \
-do {                                                            \
-	std::cerr << message << std::endl;                          \
-	throw exception() << message;                               \
-} while (false)
-
 template <typename T>
 SqmObjectList<T>::SqmObjectList(std::vector<std::shared_ptr<T>> const& objects) : m_objects(objects), m_nameToObject(createNameToObjectMapping(objects)) {
 	//

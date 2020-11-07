@@ -320,15 +320,27 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 					failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
 				}
 
-				if (input.at(equalPos - 1) == cClosingBracket) {
+				int equalToNonSpaceOffset = 1;
+				while (input.at(equalPos - equalToNonSpaceOffset) == cS || input.at(equalPos - equalToNonSpaceOffset) == cT) {
+					++equalToNonSpaceOffset;
+				}
+
+				if (input.at(equalPos - equalToNonSpaceOffset) == cClosingBracket) {
 					// Array
-					QString const name = input.mid(offset, equalPos - offset - 2);
-					int posOfOpeningBracket = equalPos + 1;
-					while ((posOfOpeningBracket < length) && (input.at(posOfOpeningBracket) != cOpeningCurlyBracket)) {
-						++posOfOpeningBracket;
+					if (input.at(equalPos - equalToNonSpaceOffset - 1) != cOpeningBracket) {
+						failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
 					}
 
+					QString const name = input.mid(offset, (equalPos - equalToNonSpaceOffset - 1) - offset);
+					equalToNonSpaceOffset = 1;
+					while ((equalPos + equalToNonSpaceOffset < length) && ((input.at(equalPos + equalToNonSpaceOffset) == cS) || (input.at(equalPos + equalToNonSpaceOffset) == cT) || (input.at(equalPos + equalToNonSpaceOffset) == cR) || (input.at(equalPos + equalToNonSpaceOffset) == cN))) {
+						++equalToNonSpaceOffset;
+					}
+
+					int const posOfOpeningBracket = equalPos + equalToNonSpaceOffset;
 					if (posOfOpeningBracket >= length) {
+						failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
+					} else if (input.at(posOfOpeningBracket) != cOpeningCurlyBracket) {
 						failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
 					}
 
@@ -346,7 +358,7 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 						QString const trimmed = parts.at(i).trimmed().toString();
 						SqmArrayContents::ArrayEntry entry;
 						if (trimmed.at(0) == cQuote) {
-							entry = SqmArrayContents::ArrayEntry(trimmed.mid(1, trimmed.size() - 2));
+							entry = SqmArrayContents::ArrayEntry(SqmStructure::unescapeQuotesInString(trimmed.mid(1, trimmed.size() - 2)));
 						} else if ((trimmed.indexOf('.') > -1) || (trimmed.compare(QStringLiteral("-0")) == 0)) {
 							entry = SqmArrayContents::ArrayEntry(trimmed.toFloat(), trimmed);
 						} else {
@@ -365,10 +377,16 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 					offset = advanceOverLineBreaks(input, offset, length);
 				} else {
 					// Property
-					QString const name = input.mid(offset, equalPos - offset);
+					QString const name = input.mid(offset, (equalPos - equalToNonSpaceOffset) - offset + 1);
+
+					equalToNonSpaceOffset = 1;
+					while ((equalPos + equalToNonSpaceOffset < length) && ((input.at(equalPos + equalToNonSpaceOffset) == cS) || (input.at(equalPos + equalToNonSpaceOffset) == cT))) {
+						++equalToNonSpaceOffset;
+					}
+
 					int posOfClosingSemicolon = -1;
-					if (((equalPos + 1) < length) && (input.at(equalPos + 1) == cQuote)) {
-						int const posOfOpeningQuote = equalPos + 1;
+					if (((equalPos + equalToNonSpaceOffset) < length) && (input.at(equalPos + equalToNonSpaceOffset) == cQuote)) {
+						int const posOfOpeningQuote = equalPos + equalToNonSpaceOffset;
 						int const posOfClosingQuote = findMatchingQuote(input, posOfOpeningQuote, length);
 						if (posOfClosingQuote == -1) {
 							failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
@@ -377,14 +395,14 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 						}
 						posOfClosingSemicolon = posOfClosingQuote + 1;
 					} else {
-						posOfClosingSemicolon = input.indexOf(cSemicolon, equalPos + 1);
+						posOfClosingSemicolon = input.indexOf(cSemicolon, equalPos + equalToNonSpaceOffset);
 						if (posOfClosingSemicolon == -1) {
 							failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
 						}
 					}
-					QString const value = input.mid(equalPos + 1, posOfClosingSemicolon - equalPos - 1);
+					QString const value = input.mid(equalPos + equalToNonSpaceOffset, posOfClosingSemicolon - equalPos - equalToNonSpaceOffset);
 					if (value.at(0) == cQuote) {
-						objects.push_back(std::make_shared<SqmStringProperty>(name, value.mid(1, value.size() - 2).replace("\"\"", "\"")));
+						objects.push_back(std::make_shared<SqmStringProperty>(name, SqmStructure::unescapeQuotesInString(value.mid(1, value.size() - 2))));
 					} else if (value.indexOf('.') > -1) {
 						objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
 					} else {
@@ -420,7 +438,7 @@ int SqmParser::findMatchingQuote(QString const& input, int posOfOpeningQuote, in
 	static const QChar cn('n');
 	while (pos < length) {
 		if (input.at(pos) == cQ) {
-			// Either string ends here, or its an "" escape
+			// Either string ends here, or its an "" escape, or a " \n " escape sequence
 			if ((pos + 1) < length && (input.at(pos + 1) == cQ)) {
 				pos += 2;
 				continue;

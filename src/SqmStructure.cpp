@@ -1,5 +1,7 @@
 #include "SqmStructure.h"
 
+#include "exceptions/FormatErrorException.h"
+
 int64_t SqmStructure::getNextUniqueId() {
 	static int64_t counter = 0;
 	return counter++;
@@ -56,3 +58,34 @@ QString SqmStructure::escapeQuotesInString(QString const& s) {
 	}
 	return result;
 }
+
+QString SqmStructure::unescapeQuotesInString(QString const& s) {
+	static const QChar cQ('"');
+	if (s.indexOf(cQ) == -1) return s;
+
+	QString result;
+	result.reserve(s.size());
+	static const QChar cS(' ');
+	static const QChar cB('\\');
+	static const QChar cn('n');
+	for (int pos = 0; pos < s.size(); ++pos) {
+		if (s.at(pos) == cQ) {
+			// Its either an " requiring escape, or a " \n " sequence
+			if ((pos + 5) < s.size() && (s.at(pos + 1) == cS) && (s.at(pos + 2) == cB) && (s.at(pos + 3) == cn) && (s.at(pos + 4) == cS) && (s.at(pos + 5) == cQ)) {
+				for (int i = 0; i < 6; ++i) result.append(s.at(pos + i));
+				pos += 5;
+			} else if ((pos + 1) < s.size() && (s.at(pos + 1) == cQ)) {
+				// Remove 'escape'
+				result.append(cQ);
+				pos += 1;
+			} else {
+				// Unescaped or unrecognized escape sequence
+				LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Input contains unrecognized escape sequence or unescaped quote in string: '" << s.toStdString() << "'!");
+			}
+		} else {
+			result.append(s.at(pos));
+		}
+	}
+	return result;
+}
+
