@@ -27,31 +27,39 @@ QByteArray SqmObjectList<T>::toBinarizedSqm() const {
 	result.append("\0raP", 4);
 	BinarizedSqm::writeUint32(result, 0);
 	BinarizedSqm::writeUint32(result, 8);
-	int const enumOffset = BinarizedSqm::writeUint32(result, 0);
+	int const enumOffsetPosition = BinarizedSqm::writeUint32(result, 0);
 
-	// Inherited className, unsupported by us
-	BinarizedSqm::writeUint8(result, 0);
-	// EntryCount as compressed integer
-	BinarizedSqm::writeCompressedInteger(result, m_objects.size());
-	// Class Entries
-	QHash<SqmStructure const*, int> localOffsetMap = stageTwoOffsetMap;
-	for (std::size_t i = 0; i < m_objects.size(); ++i) {
-		m_objects.at(i)->toSqmStageOne(result, localOffsetMap);
+	if (false) {
+		stageTwoOffsetMap.insert(this, -1);
+		this->toSqmStageTwo(result, stageTwoOffsetMap);
+	} else {
+		// Inherited className, unsupported by us
+		BinarizedSqm::writeUint8(result, 0);
+		// EntryCount as compressed integer
+		BinarizedSqm::writeCompressedInteger(result, m_objects.size());
+		// Class Entries
+		QHash<SqmStructure const*, int> localOffsetMap = stageTwoOffsetMap;
+		for (std::size_t i = 0; i < m_objects.size(); ++i) {
+			m_objects.at(i)->toSqmStageOne(result, localOffsetMap);
+		}
+
+		// Write pointer to marker after data segment
+		int const afterDataMarkerOffset = BinarizedSqm::writeUint32(result, 0);
+
+		// Write delayed stageTwos
+		for (std::size_t i = 0; i < m_objects.size(); ++i) {
+			m_objects.at(i)->toSqmStageTwo(result, localOffsetMap);
+		}
+
+		// Write after-data marker
+		int const afterDataPosition = result.size() + 4;
+		BinarizedSqm::writeUint32(result, afterDataPosition);
 	}
 
-	// Enum Marker, again?!
-	int const secondEnumOffset = BinarizedSqm::writeUint32(result, 0);
 
-	// Write delayed stageTwos
-	for (std::size_t i = 0; i < m_objects.size(); ++i) {
-		m_objects.at(i)->toSqmStageTwo(result, localOffsetMap);
-	}
-
-	int const currentOffset = result.size();
-	BinarizedSqm::overwriteOffset(result, enumOffset, currentOffset);
-	BinarizedSqm::overwriteOffset(result, secondEnumOffset, currentOffset);
-	BinarizedSqm::writeUint32(result, currentOffset);
-	// Enum Count
+	int const enumOffset = result.size();
+	//BinarizedSqm::writeUint32(result, enumOffset);
+	BinarizedSqm::overwriteOffset(result, enumOffsetPosition, enumOffset);
 	BinarizedSqm::writeUint32(result, 0);
 
 	return result;
@@ -88,14 +96,20 @@ void SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure cons
 	int const afterDataMarkerOffset = BinarizedSqm::writeUint32(output, 0);
 
 	// Write delayed stageTwos
+	int const offsetBeforeInner = output.size();
 	for (std::size_t i = 0; i < m_objects.size(); ++i) {
 		m_objects.at(i)->toSqmStageTwo(output, localOffsetMap);
 	}
 
 	// Write after-data marker
-	int const afterDataPosition = output.size() + 4;
-	BinarizedSqm::writeUint32(output, afterDataPosition);
-	BinarizedSqm::overwriteOffset(output, afterDataMarkerOffset, afterDataPosition);
+	if (output.size() == offsetBeforeInner) {
+		// No data written, reuse!
+		BinarizedSqm::overwriteOffset(output, afterDataMarkerOffset, output.size());
+	} else {
+		int const afterDataPosition = output.size() + 4;
+		BinarizedSqm::writeUint32(output, afterDataPosition);
+		BinarizedSqm::overwriteOffset(output, afterDataMarkerOffset, afterDataPosition);
+	}
 }
 
 template <typename T>
