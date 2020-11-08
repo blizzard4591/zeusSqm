@@ -55,3 +55,7 @@ void BinarizedSqm::writeString(QByteArray& output, QString const& s) {
 	output.append(s.toUtf8());
 	output.append('\0');
 }
+
+void BinarizedSqm::overwriteOffset(QByteArray& output, int where, quint32 offset) {
+	*reinterpret_cast<quint32*>(output.data() + where) = offset;
+}

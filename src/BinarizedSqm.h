@@ -13,6 +13,8 @@ public:
 	static void writeUint8(QByteArray& output, quint8 u);
 	static void writeCompressedInteger(QByteArray& output, quint64 u);
 	static void writeString(QByteArray& output, QString const& s);
+
+	static void overwriteOffset(QByteArray& output, int where, quint32 offset);
 private:
 	//
 };

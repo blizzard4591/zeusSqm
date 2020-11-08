@@ -12,7 +12,7 @@ SqmArray::SqmArray(QString const& name, SqmArrayContents const& entries) : SqmAr
 
 void SqmArray::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {
 	// Type
-	BinarizedSqm::writeUint8(output, 0);
+	BinarizedSqm::writeUint8(output, 2);
 	// Array Name
 	BinarizedSqm::writeString(output, getName());
 	SqmArrayContents::toSqmStageOne(output);
