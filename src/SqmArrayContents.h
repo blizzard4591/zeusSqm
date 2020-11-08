@@ -6,6 +6,7 @@
 #include <memory>
 #include <variant>
 
+#include <QByteArray>
 #include <QString>
 #include <QStringList>
 
@@ -33,6 +34,8 @@ public:
 
 	SqmArrayContents(std::vector<ArrayEntry> const& entries);
 	virtual ~SqmArrayContents() {}
+
+	virtual void toSqmStageOne(QByteArray& output) const;
 
 	std::vector<ArrayEntry> const& getValues() const;
 

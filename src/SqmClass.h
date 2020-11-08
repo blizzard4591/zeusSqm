@@ -13,8 +13,7 @@ public:
 	SqmClass(QString const& name, SqmObjectList<SqmStructure> const& objects);
 	virtual ~SqmClass() {}
 
-	virtual void toSqmStageOne(QByteArray& output) const override;
-	virtual void toSqmStageTwo(QByteArray& output) const override;
+	virtual void toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
 	virtual QString toSqm(int indentationLevel) const override;
 	virtual QString const& getName() const override;
 

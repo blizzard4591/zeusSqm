@@ -13,6 +13,7 @@
 #include "StatisticsCheckModule.h"
 #include "ObjectBuilderModule.h"
 #include "SqmParser.h"
+#include "BinarizedSqm.h"
 
 #include "libpbo/pbo.hpp"
 
@@ -39,6 +40,9 @@ int main(int argc, char *argv[]) {
 
 	QCommandLineOption stripCommentsOption(QStringList() << "stripComments", QCoreApplication::translate("main", "Remove comments from SQMs, even from the 'unchanged' extract from PBO."));
 	parser.addOption(stripCommentsOption);
+
+	QCommandLineOption saveBinarizedOption(QStringList() << "saveBinarized", QCoreApplication::translate("main", "Write <outputMission> as binarized SQM."));
+	parser.addOption(saveBinarizedOption);
 
 	MarkerCheckModule markerCheck;
 	markerCheck.registerOptions(parser);
@@ -183,11 +187,17 @@ int main(int argc, char *argv[]) {
 		std::cerr << "Failed to open output file '" << outputFile.fileName().toStdString() << "' for writing, can not write result!" << std::endl;
 		return -5;
 	}
-	QTextStream outputStream(&outputFile);
-	outputStream.setCodec("UTF-8");
-	outputStream << rebuildMissionFileData;
+
+	if (parser.isSet(saveBinarizedOption)) {
+		outputFile.write(sqmObjects->toBinarizedSqm());
+		std::cout << std::endl << "Saved binarized SQM to '" << outputFile.fileName().toStdString() << "'." << std::endl;
+	} else {
+		QTextStream outputStream(&outputFile);
+		outputStream.setCodec("UTF-8");
+		outputStream << rebuildMissionFileData;
+		std::cout << std::endl << "Saved SQM to '" << outputFile.fileName().toStdString() << "'." << std::endl;
+	}
 	outputFile.close();
-	std::cout << std::endl << "Saved SQM to '" << outputFile.fileName().toStdString() << "'." << std::endl;
 
 	std::cout << "Bye bye!" << std::endl;
     return 0;

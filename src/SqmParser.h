@@ -20,6 +20,7 @@ public:
 	static QByteArray stripComments(QByteArray const& input);
 
 	static bool hasBinarizedSqmHeader(QByteArray const& file);
+	static quint64 parseCompressedInteger(QByteArray const& data, int& offset);
 private:
 	// Text-based
 	SqmObjectList<SqmStructure> parse(QString const& input, int offset, int length) const;
@@ -33,7 +34,6 @@ private:
 	static qint32 parseInt32(QByteArray const& data, int& offset);
 	static quint32 parseUInt32(QByteArray const& data, int& offset);
 	static quint8 parseUint8(QByteArray const& data, int& offset);
-	static quint64 parseCompressedInteger(QByteArray const& data, int& offset);
 	static QString parseString(QByteArray const& data, int& offset);
 
 	static std::shared_ptr<SqmArray> parseArray(QByteArray const& data, int& offset);

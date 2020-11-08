@@ -20,8 +20,8 @@ public:
 
 	std::shared_ptr<SqmIntProperty> increment(int incrementBy, int* oldValue = nullptr) const;
 
-	virtual void toSqmStageOne(QByteArray& output) const override;
-	virtual void toSqmStageTwo(QByteArray& output) const override;
+	virtual void toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
+	virtual void toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const override;
 	virtual QString toSqm(int indentationLevel) const override;
 private:
 	qint32 const m_value;

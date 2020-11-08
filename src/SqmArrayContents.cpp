@@ -1,6 +1,8 @@
 #include "SqmArrayContents.h"
 
+#include "BinarizedSqm.h"
 #include "SqmStructure.h"
+#include "exceptions/InternalErrorException.h"
 
 SqmArrayContents::ArrayEntry::ArrayEntry() : type(ArrayEntryType::STRING), stringValue(), content() {
 	//
@@ -48,6 +50,33 @@ bool SqmArrayContents::shoudBeMultiLine() const {
 		}
 	}
 	return !isPure;
+}
+
+void SqmArrayContents::toSqmStageOne(QByteArray& output) const {
+	// Entry Count
+	BinarizedSqm::writeCompressedInteger(output, m_values.size());
+	for (int i = 0; i < m_values.size(); ++i) {
+		switch (m_values.at(i).type) {
+		case ArrayEntryType::STRING:
+			BinarizedSqm::writeUint8(output, 0);
+			BinarizedSqm::writeString(output, std::get<QString>(m_values.at(i).content));
+			break;
+		case ArrayEntryType::FLOAT:
+			BinarizedSqm::writeUint8(output, 1);
+			BinarizedSqm::writeFloat(output, std::get<float>(m_values.at(i).content));
+			break;
+		case ArrayEntryType::INT:
+			BinarizedSqm::writeUint8(output, 2);
+			BinarizedSqm::writeInt32(output, std::get<qint32>(m_values.at(i).content));
+			break;
+		case ArrayEntryType::RECURSIVE_ARRAY:
+			BinarizedSqm::writeUint8(output, 3);
+			std::get<std::shared_ptr<SqmArrayContents>>(m_values.at(i).content)->toSqmStageOne(output);
+			break;
+		default:
+			LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Unhandled ArrayContents subType!");
+		}
+	}
 }
 
 QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline) const {

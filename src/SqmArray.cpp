@@ -1,5 +1,7 @@
 #include "SqmArray.h"
 
+#include "BinarizedSqm.h"
+
 SqmArray::SqmArray(QString const& name, std::vector<ArrayEntry> const& entries) : SqmArrayContents(entries), m_name(name) {
 	//
 }
@@ -8,11 +10,15 @@ SqmArray::SqmArray(QString const& name, SqmArrayContents const& entries) : SqmAr
 	//
 }
 
-void SqmArray::toSqmStageOne(QByteArray& output) const {
-
+void SqmArray::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {
+	// Type
+	BinarizedSqm::writeUint8(output, 0);
+	// Array Name
+	BinarizedSqm::writeString(output, getName());
+	SqmArrayContents::toSqmStageOne(output);
 }
 
-void SqmArray::toSqmStageTwo(QByteArray& output) const {
+void SqmArray::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
 
 }
 

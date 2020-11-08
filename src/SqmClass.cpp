@@ -1,15 +1,18 @@
 #include "SqmClass.h"
 
+#include "BinarizedSqm.h"
+
 SqmClass::SqmClass(QString const& name, SqmObjectList const& objects) : SqmObjectList(objects), m_name(name) {
 	//
 }
 
-void SqmClass::toSqmStageOne(QByteArray& output) const {
-
-}
-
-void SqmClass::toSqmStageTwo(QByteArray& output) const {
-
+void SqmClass::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {
+	// Type
+	BinarizedSqm::writeUint8(output, 0);
+	// Class Name
+	BinarizedSqm::writeString(output, getName());
+	// Offset to Body
+	stageTwoOffsetMap.insert(this, BinarizedSqm::writeUint32(output, 0));
 }
 
 QString SqmClass::toSqm(int indentationLevel) const {

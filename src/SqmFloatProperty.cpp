@@ -1,5 +1,6 @@
 #include "SqmFloatProperty.h"
 
+#include "BinarizedSqm.h"
 #include "exceptions/InternalErrorException.h"
 
 SqmFloatProperty::SqmFloatProperty(QString const& name, float value) : SqmProperty(name), m_value(value), m_valueString(toFloatRepresentation(value)) {
@@ -26,12 +27,17 @@ float SqmFloatProperty::getValueAsFloat() const {
 	return m_value;
 }
 
-void SqmFloatProperty::toSqmStageOne(QByteArray& output) const {
-
+void SqmFloatProperty::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {
+	// Type
+	BinarizedSqm::writeUint8(output, 1);
+	// SubType
+	BinarizedSqm::writeUint8(output, 1);
+	BinarizedSqm::writeString(output, getName());
+	BinarizedSqm::writeFloat(output, m_value);
 }
 
-void SqmFloatProperty::toSqmStageTwo(QByteArray& output) const {
-
+void SqmFloatProperty::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
+	//
 }
 
 QString SqmFloatProperty::toSqm(int indentationLevel) const {

@@ -1,7 +1,10 @@
 #include "SqmObjectList.h"
 
+#include "BinarizedSqm.h"
 #include "SqmClass.h"
 #include "exceptions/InternalErrorException.h"
+
+#include <QHash>
 
 #include <iostream>
 #include <memory>
@@ -17,13 +20,52 @@ std::vector<std::shared_ptr<T>> const& SqmObjectList<T>::getObjects() const {
 }
 
 template <typename T>
-void SqmObjectList<T>::toSqmStageOne(QByteArray& output) const {
+QByteArray SqmObjectList<T>::toBinarizedSqm() const {
+	QByteArray result;
+	QHash<SqmStructure const*, int> stageTwoOffsetMap;
 
+	result.append("\0raP", 4);
+	BinarizedSqm::writeUint32(result, 0);
+	BinarizedSqm::writeUint32(result, 8);
+	int const enumOffset = BinarizedSqm::writeUint32(result, 0);
+
+	stageTwoOffsetMap.insert(this, -1);
+	this->toSqmStageTwo(result, stageTwoOffsetMap);
+
+	return result;
 }
 
 template <typename T>
-void SqmObjectList<T>::toSqmStageTwo(QByteArray& output) const {
+void SqmObjectList<T>::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {
+	LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Failed to write binarized SQM, toSqmStageOne called on ObjectList!");
+}
 
+template <typename T>
+void SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
+	if (!stageTwoOffsetMap.contains(this)) {
+		LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Failed to write binarized SQM, offset correction for class '" << getName().toStdString() << "' failed!");
+	}
+	int const offset = stageTwoOffsetMap.value(this);
+	// -1 marks this being the root classbody, which does not care about its location
+	if (offset != -1) {
+		int const currentOffset = output.size();
+		*reinterpret_cast<quint32*>(output.data() + offset) = currentOffset;
+	}
+
+	// Inherited className, unsupported by us
+	BinarizedSqm::writeUint8(output, 0);
+	// EntryCount as compressed integer
+	BinarizedSqm::writeCompressedInteger(output, m_objects.size());
+	// Class Entries
+	QHash<SqmStructure const*, int> localOffsetMap = stageTwoOffsetMap;
+	for (std::size_t i = 0; i < m_objects.size(); ++i) {
+		m_objects.at(i)->toSqmStageOne(output, localOffsetMap);
+	}
+
+	// Write delayed stageTwos
+	for (std::size_t i = 0; i < m_objects.size(); ++i) {
+		m_objects.at(i)->toSqmStageTwo(output, localOffsetMap);
+	}
 }
 
 template <typename T>

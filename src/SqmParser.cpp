@@ -96,12 +96,18 @@ quint8 SqmParser::parseUint8(QByteArray const& data, int& offset) {
 
 quint64 SqmParser::parseCompressedInteger(QByteArray const& data, int& offset) {
 	quint64 result = 0;
+	QByteArray bytes;
+	bytes.append(data.at(offset));
 	quint8 v = parseUint8(data, offset);
 	result += v;
+
+	bool const show = v & 0x80;
 	while (v & 0x80) {
+		bytes.append(data.at(offset));
 		v = parseUint8(data, offset);
 		result += (v - 1uLL) * 0x80uLL;
 	}
+	//if (show) std::cout << "COMINT: Value was " << result << " for bytes " << QString(bytes.toHex()).toStdString() << "." << std::endl;
 
 	return result;
 }

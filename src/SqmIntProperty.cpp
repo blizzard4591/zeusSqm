@@ -1,5 +1,7 @@
 #include "SqmIntProperty.h"
 
+#include "BinarizedSqm.h"
+
 SqmIntProperty::SqmIntProperty(QString const& name, qint32 value) : SqmProperty(name), m_value(value) {
 	//
 }
@@ -16,12 +18,17 @@ float SqmIntProperty::getValueAsFloat() const {
 	throw;
 }
 
-void SqmIntProperty::toSqmStageOne(QByteArray& output) const {
-
+void SqmIntProperty::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {
+	// Type
+	BinarizedSqm::writeUint8(output, 1);
+	// SubType
+	BinarizedSqm::writeUint8(output, 2);
+	BinarizedSqm::writeString(output, getName());
+	BinarizedSqm::writeInt32(output, m_value);
 }
 
-void SqmIntProperty::toSqmStageTwo(QByteArray& output) const {
-
+void SqmIntProperty::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
+	//
 }
 
 QString SqmIntProperty::toSqm(int indentationLevel) const {
