@@ -12,8 +12,8 @@
 #include "MarkerCheckModule.h"
 #include "StatisticsCheckModule.h"
 #include "ObjectBuilderModule.h"
-#include "SqmParser.h"
-#include "BinarizedSqm.h"
+#include "BinarizedSqmParser.h"
+#include "TextualSqmParser.h"
 
 #include "libpbo/pbo.hpp"
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
 
 	// Strip comments if requested
 	if (parser.isSet(stripCommentsOption)) {
-		missionBinaryData = SqmParser::stripComments(missionBinaryData);
+		missionBinaryData = BinarizedSqmParser::stripComments(missionBinaryData);
 	}
 
 	if (isFromPbo && parser.isSet(extractFromPboOption)) {
@@ -148,10 +148,10 @@ int main(int argc, char *argv[]) {
 	}
 
 	bool useSimpleNewline = false;
-	bool const isBinarized = SqmParser::hasBinarizedSqmHeader(missionBinaryData);
-	SqmParser sqmParser;
+	bool const isBinarized = BinarizedSqmParser::hasBinarizedSqmHeader(missionBinaryData);
 	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects;
 	if (isBinarized) {
+		BinarizedSqmParser sqmParser;
 		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionBinaryData));
 	} else {
 		QTextStream stream(missionBinaryData);
@@ -160,6 +160,7 @@ int main(int argc, char *argv[]) {
 
 		// Check if the input used Linux-style \n newlines.
 		useSimpleNewline = missionFileData.count("\r\n") == 0;
+		TextualSqmParser sqmParser;
 		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
 	}
 	
