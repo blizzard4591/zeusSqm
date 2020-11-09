@@ -413,7 +413,6 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 					} else {
 						bool ok = false;
 						objects.push_back(std::make_shared<SqmIntProperty>(name, value.toInt(&ok)));
-						std::cout << "Name: " << name.toStdString() << ", value = '" << value.toStdString() << "'" << std::endl;
 						if (!ok) failureReport("Could not parse integer property (line LINE, offset OFFSET)", input, offset);
 					}
 

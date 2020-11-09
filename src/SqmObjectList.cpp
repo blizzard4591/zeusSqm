@@ -5,8 +5,8 @@
 #include "exceptions/InternalErrorException.h"
 
 #include <QHash>
-#include <QSet>
 
+#include <chrono>
 #include <iostream>
 #include <memory>
 
@@ -22,6 +22,7 @@ std::vector<std::shared_ptr<T>> const& SqmObjectList<T>::getObjects() const {
 
 template <typename T>
 QByteArray SqmObjectList<T>::toBinarizedSqm() const {
+	auto t1 = std::chrono::high_resolution_clock::now();
 	QByteArray result;
 	QHash<SqmStructure const*, int> stageTwoOffsetMap;
 
@@ -36,6 +37,10 @@ QByteArray SqmObjectList<T>::toBinarizedSqm() const {
 	int const enumOffset = result.size();
 	BinarizedSqm::overwriteOffset(result, enumOffsetPosition, enumOffset);
 	BinarizedSqm::writeUint32(result, 0);
+
+	auto t2 = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+	std::cout << "Building the binarized SQM took " << duration << "ms." << std::endl;
 
 	return result;
 }
