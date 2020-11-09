@@ -17,7 +17,7 @@ public:
 	virtual ~SqmArray() {}
 
 	virtual void toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
-	virtual bool toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const override;
+	virtual bool toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
 	virtual QString toSqm(int indentationLevel) const override;
 	virtual QString const& getName() const override;
 

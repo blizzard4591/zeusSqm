@@ -51,7 +51,7 @@ void SqmObjectList<T>::toSqmStageOne(QByteArray& output, QHash<SqmStructure cons
 }
 
 template <typename T>
-bool SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
+bool SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {
 	if (!stageTwoOffsetMap.contains(this)) {
 		LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Failed to write binarized SQM, offset correction for class '" << getName().toStdString() << "' failed!");
 	}
@@ -67,9 +67,8 @@ bool SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure cons
 	// EntryCount as compressed integer
 	BinarizedSqm::writeCompressedInteger(output, m_objects.size());
 	// Class Entries
-	QHash<SqmStructure const*, int> localOffsetMap = stageTwoOffsetMap;
 	for (std::size_t i = 0; i < m_objects.size(); ++i) {
-		m_objects.at(i)->toSqmStageOne(output, localOffsetMap);
+		m_objects.at(i)->toSqmStageOne(output, stageTwoOffsetMap);
 	}
 
 	// Write pointer to marker after data segment
@@ -81,7 +80,7 @@ bool SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure cons
 	bool hadMarkerLast = true;
 	for (std::size_t i = 0; i < m_objects.size(); ++i) {
 		int const offsetBefore = output.size();
-		bool const innerHadMarker = m_objects.at(i)->toSqmStageTwo(output, localOffsetMap);
+		bool const innerHadMarker = m_objects.at(i)->toSqmStageTwo(output, stageTwoOffsetMap);
 		int const offsetAfter = output.size();
 		hadMarkerLast = innerHadMarker || (hadMarkerLast && (offsetBefore == offsetAfter));
 	}

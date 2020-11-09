@@ -28,7 +28,7 @@ void SqmStringProperty::toSqmStageOne(QByteArray& output, QHash<SqmStructure con
 	BinarizedSqm::writeString(output, m_value);
 }
 
-bool SqmStringProperty::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
+bool SqmStringProperty::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {
 	return false;
 }
 

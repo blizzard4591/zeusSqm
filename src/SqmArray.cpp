@@ -18,7 +18,7 @@ void SqmArray::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>
 	SqmArrayContents::toSqmStageOne(output);
 }
 
-bool SqmArray::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
+bool SqmArray::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {
 	return false;
 }
 
