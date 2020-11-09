@@ -384,6 +384,10 @@ SqmObjectList<SqmStructure> SqmParser::parse(QString const& input, int offset, i
 					// Property
 					QString const name = input.mid(offset, (equalPos - equalToNonSpaceOffset) - offset + 1);
 
+					if (name.compare("init") == 0 && offset > 933155) {
+						std::cout << "Here in init." << std::endl;
+					}
+
 					equalToNonSpaceOffset = 1;
 					while ((equalPos + equalToNonSpaceOffset < length) && ((input.at(equalPos + equalToNonSpaceOffset) == cS) || (input.at(equalPos + equalToNonSpaceOffset) == cT))) {
 						++equalToNonSpaceOffset;
@@ -460,12 +464,19 @@ int SqmParser::findMatchingQuote(QString const& input, int posOfOpeningQuote, in
 }
 
 int SqmParser::findMatchingClosingCurlyBracket(QString const& input, int length, int posOfOpeningBracket) const {
+	static const QChar cOpeningCurly('{');
+	static const QChar cClosingCurly('}');
+	static const QChar cQuote('"');
 	int pos = posOfOpeningBracket + 1;
 	int depth = 0;
 	while (pos < length) {
-		if (input.at(pos) == '{') {
+		if (input.at(pos) == cOpeningCurly) {
 			++depth;
-		} else if (input.at(pos) == '}') {
+		} else if (input.at(pos) == cQuote) {
+			// Urgh, a string. Since the string might contain "escaped" curly brackets, we need to skip it...
+			int const closingQuoteLocation = findMatchingQuote(input, pos, length);
+			pos = closingQuoteLocation;
+		} else if (input.at(pos) == cClosingCurly) {
 			if (depth == 0) {
 				return pos;
 			}
@@ -477,8 +488,9 @@ int SqmParser::findMatchingClosingCurlyBracket(QString const& input, int length,
 }
 
 void SqmParser::failureReport(QString msg, QString const& file, int offset) const {
-	int const line = file.midRef(0, offset).count('\n');
-	int const nextNewline = file.indexOf('\n', offset);
+	static const QChar cN('\n');
+	int const line = file.midRef(0, offset).count(cN);
+	int const nextNewline = file.indexOf(cN, offset);
 	int const length = nextNewline - offset;
 	QString const nextInput = file.midRef(offset, length).trimmed().toString();
 
