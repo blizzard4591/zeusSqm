@@ -30,36 +30,10 @@ QByteArray SqmObjectList<T>::toBinarizedSqm() const {
 	BinarizedSqm::writeUint32(result, 8);
 	int const enumOffsetPosition = BinarizedSqm::writeUint32(result, 0);
 
-	if (true) {
-		stageTwoOffsetMap.insert(this, -1);
-		this->toSqmStageTwo(result, stageTwoOffsetMap);
-	} else {
-		// Inherited className, unsupported by us
-		BinarizedSqm::writeUint8(result, 0);
-		// EntryCount as compressed integer
-		BinarizedSqm::writeCompressedInteger(result, m_objects.size());
-		// Class Entries
-		QHash<SqmStructure const*, int> localOffsetMap = stageTwoOffsetMap;
-		for (std::size_t i = 0; i < m_objects.size(); ++i) {
-			m_objects.at(i)->toSqmStageOne(result, localOffsetMap);
-		}
-
-		// Write pointer to marker after data segment
-		int const afterDataMarkerOffset = BinarizedSqm::writeUint32(result, 0);
-
-		// Write delayed stageTwos
-		for (std::size_t i = 0; i < m_objects.size(); ++i) {
-			m_objects.at(i)->toSqmStageTwo(result, localOffsetMap);
-		}
-
-		// Write after-data marker
-		int const afterDataPosition = result.size() + 4;
-		BinarizedSqm::writeUint32(result, afterDataPosition);
-	}
-
+	stageTwoOffsetMap.insert(this, -1);
+	this->toSqmStageTwo(result, stageTwoOffsetMap);
 
 	int const enumOffset = result.size();
-	//BinarizedSqm::writeUint32(result, enumOffset);
 	BinarizedSqm::overwriteOffset(result, enumOffsetPosition, enumOffset);
 	BinarizedSqm::writeUint32(result, 0);
 
@@ -72,8 +46,7 @@ void SqmObjectList<T>::toSqmStageOne(QByteArray& output, QHash<SqmStructure cons
 }
 
 template <typename T>
-void SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
-	static QSet<int> markerLocations;
+bool SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
 	if (!stageTwoOffsetMap.contains(this)) {
 		LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Failed to write binarized SQM, offset correction for class '" << getName().toStdString() << "' failed!");
 	}
@@ -97,26 +70,33 @@ void SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure cons
 	// Write pointer to marker after data segment
 	//BinarizedSqm::writeString(output, QString("(before of %1)").arg(getName()));
 	int const afterDataMarkerOffset = BinarizedSqm::writeUint32(output, 0);
-	markerLocations.insert(afterDataMarkerOffset);
 
 	// Write delayed stageTwos
 	int const offsetBeforeInner = output.size();
+	bool hadMarkerLast = true;
 	for (std::size_t i = 0; i < m_objects.size(); ++i) {
-		m_objects.at(i)->toSqmStageTwo(output, localOffsetMap);
+		int const offsetBefore = output.size();
+		bool const innerHadMarker = m_objects.at(i)->toSqmStageTwo(output, localOffsetMap);
+		int const offsetAfter = output.size();
+		hadMarkerLast = innerHadMarker || (hadMarkerLast && (offsetBefore == offsetAfter));
 	}
 
-	//BinarizedSqm::writeString(output, QString("(end of %1)").arg(getName()));
 	// Write after-data marker
 	if (output.size() == offsetBeforeInner) {
 		// No data written, reuse!
+		//BinarizedSqm::writeString(output, QString("(end of %1,reuse)").arg(getName()));
 		BinarizedSqm::overwriteOffset(output, afterDataMarkerOffset, output.size());
-	} else if (markerLocations.contains(output.size() - 4)) {
+	} else if (hadMarkerLast) {
+		//BinarizedSqm::writeString(output, QString("(end of %1,hadLast)").arg(getName()));
 		BinarizedSqm::overwriteOffset(output, afterDataMarkerOffset, output.size());
 	} else {
+		//BinarizedSqm::writeString(output, QString("(end of %1,new)").arg(getName()));
 		int const afterDataPosition = output.size() + 4;
-		markerLocations.insert(BinarizedSqm::writeUint32(output, afterDataPosition));
+		BinarizedSqm::writeUint32(output, afterDataPosition);
 		BinarizedSqm::overwriteOffset(output, afterDataMarkerOffset, afterDataPosition);
 	}
+
+	return true;
 }
 
 template <typename T>
@@ -145,8 +125,8 @@ std::size_t SqmObjectList<T>::size() const {
 
 template <typename T>
 QString const& SqmObjectList<T>::getName() const {
-	static QString bla("root");
-	return bla;
+	//static QString rootName("_ROOT");
+	//return rootName;
 	throw;
 }
 

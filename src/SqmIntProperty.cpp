@@ -27,8 +27,8 @@ void SqmIntProperty::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*
 	BinarizedSqm::writeInt32(output, m_value);
 }
 
-void SqmIntProperty::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
-	//
+bool SqmIntProperty::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
+	return false;
 }
 
 QString SqmIntProperty::toSqm(int indentationLevel) const {

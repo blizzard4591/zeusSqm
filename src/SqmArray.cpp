@@ -18,8 +18,8 @@ void SqmArray::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>
 	SqmArrayContents::toSqmStageOne(output);
 }
 
-void SqmArray::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
-
+bool SqmArray::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int> const& stageTwoOffsetMap) const {
+	return false;
 }
 
 QString SqmArray::toSqm(int indentationLevel) const {
