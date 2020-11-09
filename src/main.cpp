@@ -44,6 +44,9 @@ int main(int argc, char *argv[]) {
 	QCommandLineOption saveBinarizedOption(QStringList() << "saveBinarized", QCoreApplication::translate("main", "Write <outputMission> as binarized SQM."));
 	parser.addOption(saveBinarizedOption);
 
+	QCommandLineOption saveBinarizedIfBinarizedInputOption(QStringList() << "saveBinarizedIfBinarizedInput", QCoreApplication::translate("main", "Write <outputMission> as binarized SQM iff the input file is binarized."));
+	parser.addOption(saveBinarizedIfBinarizedInputOption);
+
 	MarkerCheckModule markerCheck;
 	markerCheck.registerOptions(parser);
 
@@ -188,7 +191,7 @@ int main(int argc, char *argv[]) {
 		return -5;
 	}
 
-	if (parser.isSet(saveBinarizedOption)) {
+	if (parser.isSet(saveBinarizedOption) || (isBinarized && parser.isSet(saveBinarizedIfBinarizedInputOption))) {
 		outputFile.write(sqmObjects->toBinarizedSqm());
 		std::cout << std::endl << "Saved binarized SQM to '" << outputFile.fileName().toStdString() << "'." << std::endl;
 	} else {
