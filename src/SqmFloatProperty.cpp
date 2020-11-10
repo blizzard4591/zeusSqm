@@ -9,7 +9,7 @@ SqmFloatProperty::SqmFloatProperty(QString const& name, float value) : SqmProper
 
 SqmFloatProperty::SqmFloatProperty(QString const& name, QString const& value) : SqmProperty(name), m_value(value.toFloat()), m_valueString(value) {
 	bool ok = false;
-	float const f = value.toFloat(&ok);
+	float const f = value.toDouble(&ok); // See https://bugreports.qt.io/browse/QTBUG-88371
 	if (!ok) {
 		LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Failed to parse value '" << value.toStdString() << "' in field '" << name.toStdString() << "' into float!");
 	}
