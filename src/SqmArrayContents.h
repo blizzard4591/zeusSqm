@@ -41,7 +41,7 @@ public:
 
 	float getEntryAsFloat(int index) const;
 
-	virtual QString toSqm(int indentationLevel, bool& isMultiline) const;
+	virtual QString toSqm(int indentationLevel, bool& isMultiline, SqmStructure::FormatType const& format) const;
 private:
 	std::vector<ArrayEntry> m_values;
 

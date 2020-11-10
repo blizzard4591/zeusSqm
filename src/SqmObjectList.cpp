@@ -104,13 +104,23 @@ bool SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure cons
 }
 
 template <typename T>
-QString SqmObjectList<T>::toSqm(int indentationLevel) const {
-	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
-
+QString SqmObjectList<T>::toSqm(int indentationLevel, FormatType const& format) const {
+	auto t1 = std::chrono::high_resolution_clock::now();
 	QString result;
-	for (std::size_t i = 0; i < m_objects.size(); ++i) {
-		result.append(m_objects.at(i)->toSqm(indentationLevel));
+	if ((format == FormatType::SINGLESPACED) && (indentationLevel == 0)) {
+		result.append(QStringLiteral("\r\n\r\n"));
 	}
+
+	for (std::size_t i = 0; i < m_objects.size(); ++i) {
+		result.append(m_objects.at(i)->toSqm(indentationLevel, format));
+	}
+
+	if (indentationLevel == 0) {
+		auto t2 = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+		std::cout << "Building the textual SQM took " << duration << "ms." << std::endl;
+	}
+
 	return result;
 }
 

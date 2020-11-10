@@ -45,7 +45,7 @@ public:
 	QByteArray toBinarizedSqm() const;
 	virtual void toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
 	virtual bool toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
-	virtual QString toSqm(int indentationLevel) const override;
+	virtual QString toSqm(int indentationLevel, FormatType const& format) const override;
 	virtual QString const& getName() const override;
 
 	SqmObjectList<T> filter(filterFunc f) const;

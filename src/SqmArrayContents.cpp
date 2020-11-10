@@ -79,10 +79,10 @@ void SqmArrayContents::toSqmStageOne(QByteArray& output) const {
 	}
 }
 
-QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline) const {
+QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline, SqmStructure::FormatType const& format) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
 
-	isMultiline = shoudBeMultiLine();
+	isMultiline = shoudBeMultiLine() && format != SqmStructure::FormatType::SINGLESPACED;
 	if (isMultiline) {
 		QString result;
 		result.append(indentString).append(QStringLiteral("{\r\n"));
@@ -103,7 +103,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline) const {
 			case ArrayEntryType::RECURSIVE_ARRAY:
 			{
 				bool subIsMultiline;
-				QString const subValue = std::get<std::shared_ptr<SqmArrayContents>>(m_values.at(i).content)->toSqm(indentationLevel + 1, subIsMultiline);
+				QString const subValue = std::get<std::shared_ptr<SqmArrayContents>>(m_values.at(i).content)->toSqm(indentationLevel + 1, subIsMultiline, format);
 				if (subIsMultiline) {
 					result.append(subValue);
 				} else {
@@ -146,7 +146,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline) const {
 			case ArrayEntryType::RECURSIVE_ARRAY:
 			{
 				bool subIsMultiline;
-				QString const subValue = std::get<std::shared_ptr<SqmArrayContents>>(m_values.at(i).content)->toSqm(indentationLevel + 1, subIsMultiline);
+				QString const subValue = std::get<std::shared_ptr<SqmArrayContents>>(m_values.at(i).content)->toSqm(indentationLevel + 1, subIsMultiline, format);
 				result.append(subValue);
 				break;
 			}

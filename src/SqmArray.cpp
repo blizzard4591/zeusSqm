@@ -22,18 +22,29 @@ bool SqmArray::toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int>
 	return false;
 }
 
-QString SqmArray::toSqm(int indentationLevel) const {
+QString SqmArray::toSqm(int indentationLevel, FormatType const& format) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
 
 	bool isMultiline = false;
-	QString const subValue = SqmArrayContents::toSqm(indentationLevel, isMultiline);
+	QString const subValue = SqmArrayContents::toSqm(indentationLevel, isMultiline, format);
 
+	QString result;
 	if (isMultiline) {
-		QString result = QStringLiteral("%1%2[]=\r\n").arg(indentString).arg(getName());
+		if (format == FormatType::NOSPACE) {
+			result = QStringLiteral("%1%2[]=\r\n");
+		} else {
+			result = QStringLiteral("%1%2[] = \r\n");
+		}
+		result = result.arg(indentString).arg(getName());
 		result.append(subValue).append(QStringLiteral(";\r\n"));
 		return result;
 	} else {
-		QString result = QStringLiteral("%1%2[]=").arg(indentString).arg(getName());
+		if (format == FormatType::NOSPACE) {
+			result = QStringLiteral("%1%2[]=");
+		} else {
+			result = QStringLiteral("%1%2[] = ");
+		}
+		result = result.arg(indentString).arg(getName());
 		result.append(subValue);
 		result.append(QStringLiteral(";\r\n"));
 		return result;

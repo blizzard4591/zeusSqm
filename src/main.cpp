@@ -149,6 +149,7 @@ int main(int argc, char *argv[]) {
 
 	bool useSimpleNewline = false;
 	bool const isBinarized = BinarizedSqmParser::hasBinarizedSqmHeader(missionBinaryData);
+	SqmStructure::FormatType textualFormat = SqmStructure::FormatType::NOSPACE;
 	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects;
 	if (isBinarized) {
 		BinarizedSqmParser sqmParser;
@@ -162,6 +163,7 @@ int main(int argc, char *argv[]) {
 		useSimpleNewline = missionFileData.count("\r\n") == 0;
 		TextualSqmParser sqmParser;
 		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
+		textualFormat = sqmParser.getFormat(missionFileData);
 	}
 	
 	if (sqmObjects->getIntProperty(QStringLiteral("version"))->getValueAsInt() != 53) {
@@ -172,13 +174,6 @@ int main(int argc, char *argv[]) {
 	sqmObjects = markerCheck.perform(sqmObjects);
 	sqmObjects = statisticsCheck.perform(sqmObjects);
 	sqmObjects = objectBuilder.perform(sqmObjects);
-
-	QString rebuildMissionFileData = sqmObjects->toSqm(0);
-
-	// Match the newline-style of the input
-	if (useSimpleNewline) {
-		rebuildMissionFileData.replace("\r\n", "\n");
-	}
 
 	QFile outputFile;
 	if (parser.isSet(inplaceOption)) {
@@ -196,6 +191,13 @@ int main(int argc, char *argv[]) {
 		outputFile.write(sqmObjects->toBinarizedSqm());
 		std::cout << std::endl << "Saved binarized SQM to '" << outputFile.fileName().toStdString() << "'." << std::endl;
 	} else {
+		QString rebuildMissionFileData = sqmObjects->toSqm(0, textualFormat);
+
+		// Match the newline-style of the input
+		if (useSimpleNewline) {
+			rebuildMissionFileData.replace("\r\n", "\n");
+		}
+
 		QTextStream outputStream(&outputFile);
 		outputStream.setCodec("UTF-8");
 		outputStream << rebuildMissionFileData;

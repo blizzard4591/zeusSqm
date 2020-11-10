@@ -13,7 +13,10 @@ public:
 	virtual void toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const = 0;
 	virtual bool toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const = 0;
 
-	virtual QString toSqm(int indentationLevel) const = 0;
+	enum class FormatType {
+		NOSPACE, SINGLESPACED
+	};
+	virtual QString toSqm(int indentationLevel, FormatType const& format) const = 0;
 	virtual QString const& getName() const = 0;
 
 	int64_t getUniqueId() const;

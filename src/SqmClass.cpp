@@ -15,13 +15,17 @@ void SqmClass::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>
 	stageTwoOffsetMap.insert(this, BinarizedSqm::writeUint32(output, 0));
 }
 
-QString SqmClass::toSqm(int indentationLevel) const {
+QString SqmClass::toSqm(int indentationLevel, FormatType const& format) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
 
-	QString result = QStringLiteral("%1class %2\r\n").arg(indentString).arg(getName());
-	result.append(indentString).append(QStringLiteral("{\r\n"));
-	result.append(SqmObjectList::toSqm(indentationLevel + 1));
-	result.append(indentString).append(QStringLiteral("};\r\n"));
+	QString result = QStringLiteral("%1class %2").arg(indentString).arg(getName());
+	if ((format == FormatType::SINGLESPACED) && (getObjects().size() == 0)) {
+		result.append(QStringLiteral("{};\r\n"));
+	} else {
+		result.append(QStringLiteral("\r\n")).append(indentString).append(QStringLiteral("{\r\n"));
+		result.append(SqmObjectList::toSqm(indentationLevel + 1, format));
+		result.append(indentString).append(QStringLiteral("};\r\n"));
+	}
 	return result;
 }
 

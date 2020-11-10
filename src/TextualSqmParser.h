@@ -14,6 +14,7 @@ public:
 	virtual ~TextualSqmParser() {}
 
 	SqmObjectList<SqmStructure> parse(QString const& input) const;
+	SqmStructure::FormatType getFormat(QString const& input) const;
 
 	static QString stripComments(QString const& input);
 private:

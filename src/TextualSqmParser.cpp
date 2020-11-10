@@ -21,6 +21,14 @@ SqmObjectList<SqmStructure> TextualSqmParser::parse(QString const& input) const 
 	return root;
 }
 
+SqmStructure::FormatType TextualSqmParser::getFormat(QString const& input) const {
+	SqmStructure::FormatType format = SqmStructure::FormatType::NOSPACE;
+	if (input.indexOf(QStringLiteral("version=")) == -1) {
+		format = SqmStructure::FormatType::SINGLESPACED;
+	}
+	return format;
+}
+
 QString TextualSqmParser::stripComments(QString const& input) {
 	QString const newLine = (input.count(QStringLiteral("\r\n")) > 0) ? QStringLiteral("\r\n") : QStringLiteral("\n");
 	QString result;

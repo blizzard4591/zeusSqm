@@ -40,7 +40,14 @@ bool SqmFloatProperty::toSqmStageTwo(QByteArray& output, QHash<SqmStructure cons
 	return false;
 }
 
-QString SqmFloatProperty::toSqm(int indentationLevel) const {
+QString SqmFloatProperty::toSqm(int indentationLevel, FormatType const& format) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
-	return QStringLiteral("%1%2=%3;\r\n").arg(indentString).arg(getName()).arg(m_valueString);
+	QString result;
+	if (format == FormatType::NOSPACE) {
+		result = QStringLiteral("%1%2=%3;\r\n");
+	} else {
+		result = QStringLiteral("%1%2 = %3;\r\n");
+	}
+
+	return result.arg(indentString).arg(getName()).arg(m_valueString);
 }

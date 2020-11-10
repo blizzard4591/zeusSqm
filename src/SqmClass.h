@@ -14,7 +14,7 @@ public:
 	virtual ~SqmClass() {}
 
 	virtual void toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
-	virtual QString toSqm(int indentationLevel) const override;
+	virtual QString toSqm(int indentationLevel, FormatType const& format) const override;
 	virtual QString const& getName() const override;
 
 	SqmRoot insertClassItemsWithItemCountIncrement(std::vector<SqmObjectList<SqmStructure>> const& objects, SqmRoot const& root) const;
