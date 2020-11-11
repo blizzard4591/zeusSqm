@@ -18,6 +18,7 @@ public:
 	};
 	virtual QString toSqm(int indentationLevel, FormatType const& format) const = 0;
 	virtual QString const& getName() const = 0;
+	virtual std::shared_ptr<SqmStructure> rename(QString const& newName) const = 0;
 
 	int64_t getUniqueId() const;
 

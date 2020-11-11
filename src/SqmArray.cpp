@@ -55,6 +55,10 @@ QString const& SqmArray::getName() const {
 	return m_name;
 }
 
+std::shared_ptr<SqmStructure> SqmArray::rename(QString const& newName) const {
+	return std::make_shared<SqmArray>(newName, getValues());
+}
+
 SqmArray SqmArray::setEntry(int index, float value) const {
 	if ((index < 0) || (index >= getValues().size())) {
 		throw;

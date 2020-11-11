@@ -145,6 +145,11 @@ QString const& SqmObjectList<T>::getName() const {
 }
 
 template <typename T>
+std::shared_ptr<SqmStructure> SqmObjectList<T>::rename(QString const& newName) const {
+	throw;
+}
+
+template <typename T>
 QHash<QString, std::shared_ptr<T>> SqmObjectList<T>::createNameToObjectMapping(std::vector<std::shared_ptr<T>> const& objects) {
 	QHash<QString, std::shared_ptr<T>> result;
 	for (std::size_t i = 0; i < objects.size(); ++i) {

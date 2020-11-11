@@ -15,6 +15,14 @@ SqmFloatProperty::SqmFloatProperty(QString const& name, QString const& value) : 
 	}
 }
 
+SqmFloatProperty::SqmFloatProperty(QString const& name, float value, QString const& svalue) : SqmProperty(name), m_value(value), m_valueString(svalue) {
+	//
+}
+
+std::shared_ptr<SqmStructure> SqmFloatProperty::rename(QString const& newName) const {
+	return std::make_shared<SqmFloatProperty>(newName, m_value, m_valueString);
+}
+
 QString const& SqmFloatProperty::getValueAsString() const {
 	throw;
 }

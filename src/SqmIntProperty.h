@@ -10,6 +10,8 @@ public:
 	SqmIntProperty(QString const& name, qint32 value);
 	virtual ~SqmIntProperty() {}
 
+	virtual std::shared_ptr<SqmStructure> rename(QString const& newName) const override;
+
 	virtual Type getPropertyType() const override {
 		return Type::INT;
 	}
@@ -19,6 +21,7 @@ public:
 	virtual float getValueAsFloat() const override;
 
 	std::shared_ptr<SqmIntProperty> increment(int incrementBy, int* oldValue = nullptr) const;
+	std::shared_ptr<SqmIntProperty> decrement(int decrementBy, int* oldValue = nullptr) const;
 
 	virtual void toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
 	virtual bool toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;

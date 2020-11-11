@@ -10,6 +10,8 @@ public:
 	SqmStringProperty(QString const& name, QString const& value);
 	virtual ~SqmStringProperty() {}
 
+	virtual std::shared_ptr<SqmStructure> rename(QString const& newName) const override;
+
 	virtual Type getPropertyType() const override {
 		return Type::STRING;
 	}

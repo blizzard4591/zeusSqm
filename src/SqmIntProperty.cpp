@@ -6,6 +6,10 @@ SqmIntProperty::SqmIntProperty(QString const& name, qint32 value) : SqmProperty(
 	//
 }
 
+std::shared_ptr<SqmStructure> SqmIntProperty::rename(QString const& newName) const {
+	return std::make_shared<SqmIntProperty>(newName, m_value);
+}
+
 QString const& SqmIntProperty::getValueAsString() const {
 	throw;
 }
@@ -51,4 +55,14 @@ std::shared_ptr<SqmIntProperty> SqmIntProperty::increment(int incrementBy, int* 
 	}
 
 	return std::make_shared<SqmIntProperty>(getName(), valueBefore + incrementBy);
+}
+
+std::shared_ptr<SqmIntProperty> SqmIntProperty::decrement(int decrementBy, int* oldValue) const {
+	if (decrementBy < 1) throw;
+	int const valueBefore = getValueAsInt();
+	if (oldValue != nullptr) {
+		*oldValue = valueBefore;
+	}
+
+	return std::make_shared<SqmIntProperty>(getName(), valueBefore - decrementBy);
 }

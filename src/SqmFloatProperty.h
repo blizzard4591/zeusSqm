@@ -9,7 +9,10 @@ class SqmFloatProperty : public SqmProperty {
 public:
 	SqmFloatProperty(QString const& name, float value);
 	SqmFloatProperty(QString const& name, QString const& value);
+	SqmFloatProperty(QString const& name, float value, QString const& svalue);
 	virtual ~SqmFloatProperty() {}
+
+	virtual std::shared_ptr<SqmStructure> rename(QString const& newName) const override;
 
 	virtual Type getPropertyType() const override {
 		return Type::FLOAT;

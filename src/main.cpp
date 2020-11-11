@@ -9,6 +9,7 @@
 #include <iostream>
 #include <variant>
 
+#include "AllowedModsCheckModule.h"
 #include "MarkerCheckModule.h"
 #include "StatisticsCheckModule.h"
 #include "ObjectBuilderModule.h"
@@ -46,6 +47,9 @@ int main(int argc, char *argv[]) {
 
 	QCommandLineOption saveBinarizedIfBinarizedInputOption(QStringList() << "saveBinarizedIfBinarizedInput", QCoreApplication::translate("main", "Write <outputMission> as binarized SQM iff the input file is binarized."));
 	parser.addOption(saveBinarizedIfBinarizedInputOption);
+
+	AllowedModsCheckModule allowedModsCheck;
+	allowedModsCheck.registerOptions(parser);
 
 	MarkerCheckModule markerCheck;
 	markerCheck.registerOptions(parser);
@@ -122,7 +126,9 @@ int main(int argc, char *argv[]) {
 		missionBinaryData = inputFile.readAll();
 	}
 
-	if (!markerCheck.checkArguments(parser)) {
+	if (!allowedModsCheck.checkArguments(parser)) {
+		return -1;
+	} else if (!markerCheck.checkArguments(parser)) {
 		return -1;
 	} else if (!statisticsCheck.checkArguments(parser)) {
 		return -1;
@@ -171,6 +177,7 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	sqmObjects = allowedModsCheck.perform(sqmObjects);
 	sqmObjects = markerCheck.perform(sqmObjects);
 	sqmObjects = statisticsCheck.perform(sqmObjects);
 	sqmObjects = objectBuilder.perform(sqmObjects);

@@ -7,6 +7,10 @@ SqmStringProperty::SqmStringProperty(QString const& name, QString const& value) 
 	//
 }
 
+std::shared_ptr<SqmStructure> SqmStringProperty::rename(QString const& newName) const {
+	return std::make_shared<SqmStringProperty>(newName, m_value);
+}
+
 QString const& SqmStringProperty::getValueAsString() const {
 	return m_value;
 }
