@@ -39,7 +39,10 @@ You have an nice picture like the one shown above and want a festive tree in you
  - `--buildFromImage <image>`: Build a 2D structure from an image, where a non-transparent pixel is translated to a block and to air otherwise.
  - `--buildMinAlpha <1 - 255>`: Minimal alpha channel value for a pixel not to be considered transparent.
  - `--buildStartingPoint x,y,z`: Coordinates of where to start building the structure, e.g. `1000,1000,10`.
- 
+
+Saved your mission with mods loaded that not all players necessarily have?
+ - `--checkMods <whitelist.txt>`: Loads whitelisted mods from the given file, one per line. Complains if the mission requires mods outside of these values.
+ - `--dropUnlistedMods`: Removes references to non-whitelisted mods from the mission.
 
 ## How to build
 1. Clone the repository `https://github.com/blizzard4591/sqmTools.git` to a folder of your choice, we will call this folder `D:\sqmTools`.
