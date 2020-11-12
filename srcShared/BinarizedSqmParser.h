@@ -10,7 +10,7 @@
 
 class BinarizedSqmParser {
 public:
-	BinarizedSqmParser();
+	BinarizedSqmParser(bool beQuiet = false);
 	virtual ~BinarizedSqmParser() {}
 
 	SqmObjectList<SqmStructure> parse(QByteArray& input) const;
@@ -20,6 +20,8 @@ public:
 	static bool hasBinarizedSqmHeader(QByteArray const& file);
 	static quint64 parseCompressedInteger(QByteArray const& data, int& offset);
 private:
+	bool const m_beQuiet;
+
 	static float parseFloat(QByteArray const& data, int& offset);
 	static qint32 parseInt32(QByteArray const& data, int& offset);
 	static quint32 parseUInt32(QByteArray const& data, int& offset);

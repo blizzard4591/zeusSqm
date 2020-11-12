@@ -39,6 +39,9 @@ public:
 	QString const& getPropertyValueAsString(QString const& name) const;
 	qint32 getPropertyValueAsInt(QString const& name) const;
 
+	bool hasClass(QString const& name) const;
+	SqmClass* getClass(QString const& name) const;
+
 	bool hasArray(QString const& name) const;
 	SqmArray* getArray(QString const& name) const;
 

@@ -246,9 +246,25 @@ qint32 SqmObjectList<T>::getPropertyValueAsInt(QString const& name) const {
 }
 
 template <typename T>
+bool SqmObjectList<T>::hasClass(QString const& name) const {
+	SqmClass* const c = dynamic_cast<SqmClass*>(getByName(name));
+	return (c != nullptr);
+}
+
+template <typename T>
+SqmClass* SqmObjectList<T>::getClass(QString const& name) const {
+	SqmClass* const c = dynamic_cast<SqmClass*>(getByName(name));
+	if (c == nullptr) {
+		throw;
+	}
+
+	return c;
+}
+
+template <typename T>
 bool SqmObjectList<T>::hasArray(QString const& name) const {
-	SqmArray* const property = dynamic_cast<SqmArray*>(getByName(name));
-	return (property != nullptr);
+	SqmArray* const array = dynamic_cast<SqmArray*>(getByName(name));
+	return (array != nullptr);
 }
 
 template <typename T>

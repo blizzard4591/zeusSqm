@@ -8,7 +8,7 @@
 
 #include "exceptions/FormatErrorException.h"
 
-TextualSqmParser::TextualSqmParser() {
+TextualSqmParser::TextualSqmParser(bool beQuiet) : m_beQuiet(beQuiet) {
 	//
 }
 
@@ -17,7 +17,9 @@ SqmObjectList<SqmStructure> TextualSqmParser::parse(QString const& input) const 
 	SqmObjectList<SqmStructure> root = SqmObjectList<SqmStructure>(QString(), parse(input, 0, input.length()));
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	std::cout << "Parsing SQM took " << duration << "ms." << std::endl;
+	if (!m_beQuiet) {
+		std::cout << "Parsing SQM took " << duration << "ms." << std::endl;
+	}
 	return root;
 }
 
@@ -299,6 +301,5 @@ void TextualSqmParser::failureReport(QString msg, QString const& file, int offse
 	msg = msg.replace(QStringLiteral("LINE"), QString::number(line));
 	msg = msg.replace(QStringLiteral("OFFSET"), QString::number(offset));
 
-	std::cerr << "Failed to parse SQM: " << msg.toStdString() << std::endl;
-	exit(-1);
+	LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Failed to parse SQM: " << msg.toStdString());
 }

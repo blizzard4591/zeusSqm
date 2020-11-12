@@ -10,7 +10,7 @@
 
 class TextualSqmParser {
 public:
-	TextualSqmParser();
+	TextualSqmParser(bool beQuiet = false);
 	virtual ~TextualSqmParser() {}
 
 	SqmObjectList<SqmStructure> parse(QString const& input) const;
@@ -18,6 +18,8 @@ public:
 
 	static QString stripComments(QString const& input);
 private:
+	bool const m_beQuiet;
+
 	std::vector<std::shared_ptr<SqmStructure>> parse(QString const& input, int offset, int length) const;
 	int advanceOverLineBreaks(QString const& input, int offset, int length) const;
 	int findMatchingClosingCurlyBracket(QString const& input, int length, int posOfOpeningBracket) const;

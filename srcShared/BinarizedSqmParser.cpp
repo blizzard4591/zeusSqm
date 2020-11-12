@@ -12,7 +12,7 @@
 #include "TextualSqmParser.h"
 #include "exceptions/FormatErrorException.h"
 
-BinarizedSqmParser::BinarizedSqmParser() {
+BinarizedSqmParser::BinarizedSqmParser(bool beQuiet) : m_beQuiet(beQuiet) {
 	//
 }
 
@@ -231,7 +231,9 @@ SqmObjectList<SqmStructure> BinarizedSqmParser::parse(QByteArray& input) const {
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	std::cout << "Parsing binarized SQM took " << duration << "ms." << std::endl;
+	if (!m_beQuiet) {
+		std::cout << "Parsing binarized SQM took " << duration << "ms." << std::endl;
+	}
 
 	return result;
 }

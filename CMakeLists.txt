@@ -157,6 +157,10 @@ file(GLOB_RECURSE ZEUSSQM_BUILDTOOLS_VERSIONINFO_SOURCES_CPP ${PROJECT_SOURCE_DI
 file(GLOB_RECURSE ZEUSSQM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
 file(GLOB_RECURSE ZEUSSQM_SOURCES_CPP ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
+# 'Collect Mods' Sources
+file(GLOB_RECURSE ZEUSSQM_COLLECTMODS_HEADERS ${PROJECT_SOURCE_DIR}/srcCollectMods/*.h)
+file(GLOB_RECURSE ZEUSSQM_COLLECTMODS_SOURCES_CPP ${PROJECT_SOURCE_DIR}/srcCollectMods/*.cpp)
+
 # Shared Sources
 file(GLOB_RECURSE ZEUSSQM_SHARED_HEADERS ${PROJECT_SOURCE_DIR}/srcShared/*.h)
 file(GLOB_RECURSE ZEUSSQM_SHARED_SOURCES_CPP ${PROJECT_SOURCE_DIR}/srcShared/*.cpp)
@@ -178,10 +182,13 @@ set(LIBPBO_SRCS
 
 # Add the executables
 add_library(libpbo STATIC ${LIBPBO_SRCS})
+set_target_properties(libpbo PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
 
 add_library(zeusSqmShared STATIC ${ZEUSSQM_SHARED_HEADERS} ${ZEUSSQM_SHARED_SOURCES_CPP})
 
 add_executable(zeusSqm ${ZEUSSQM_HEADERS} ${ZEUSSQM_SOURCES_CPP} "${PROJECT_BINARY_DIR}/include/version.cpp")
+
+add_executable(zeusSqmCollectMods ${ZEUSSQM_COLLECTMODS_HEADERS} ${ZEUSSQM_COLLECTMODS_SOURCES_CPP} "${PROJECT_BINARY_DIR}/include/version.cpp")
 
 add_executable(zeusSqmVersionInfo ${ZEUSSQM_BUILDTOOLS_VERSIONINFO_HEADERS} ${ZEUSSQM_BUILDTOOLS_VERSIONINFO_SOURCES_CPP} "${PROJECT_BINARY_DIR}/include/version.cpp")
 
@@ -199,10 +206,11 @@ endif(MSVC)
 target_link_libraries(zeusSqmShared Qt5::Core)
 target_link_libraries(zeusSqmShared Qt5::Gui)
 
-target_link_libraries(zeusSqm Qt5::Core)
-target_link_libraries(zeusSqm Qt5::Gui)
 target_link_libraries(zeusSqm libpbo)
 target_link_libraries(zeusSqm zeusSqmShared)
+
+target_link_libraries(zeusSqmCollectMods libpbo)
+target_link_libraries(zeusSqmCollectMods zeusSqmShared)
 
 target_link_libraries(libpbo OpenSSL::Crypto)
 
