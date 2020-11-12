@@ -179,6 +179,8 @@ set(LIBPBO_SRCS
 # Add the executables
 add_library(libpbo STATIC ${LIBPBO_SRCS})
 
+add_library(zeusSqmShared STATIC ${ZEUSSQM_SHARED_HEADERS} ${ZEUSSQM_SHARED_SOURCES_CPP})
+
 add_executable(zeusSqm ${ZEUSSQM_HEADERS} ${ZEUSSQM_SOURCES_CPP} "${PROJECT_BINARY_DIR}/include/version.cpp")
 
 add_executable(zeusSqmVersionInfo ${ZEUSSQM_BUILDTOOLS_VERSIONINFO_HEADERS} ${ZEUSSQM_BUILDTOOLS_VERSIONINFO_SOURCES_CPP} "${PROJECT_BINARY_DIR}/include/version.cpp")
@@ -194,9 +196,13 @@ if (MSVC)
 endif(MSVC)
 
 # Use the required modules from Qt 5.
+target_link_libraries(zeusSqmShared Qt5::Core)
+target_link_libraries(zeusSqmShared Qt5::Gui)
+
 target_link_libraries(zeusSqm Qt5::Core)
 target_link_libraries(zeusSqm Qt5::Gui)
 target_link_libraries(zeusSqm libpbo)
+target_link_libraries(zeusSqm zeusSqmShared)
 
 target_link_libraries(libpbo OpenSSL::Crypto)
 
