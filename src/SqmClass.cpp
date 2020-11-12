@@ -19,6 +19,10 @@ QString SqmClass::toSqm(int indentationLevel, FormatType const& format) const {
 	QString const indentString = QStringLiteral("\t").repeated(indentationLevel);
 
 	QString result = QStringLiteral("%1class %2").arg(indentString).arg(getName());
+	if (!getInheritedClassName().isEmpty()) {
+		result.append(": ").append(getInheritedClassName());
+	}
+
 	if ((format == FormatType::SINGLESPACED) && (getObjects().size() == 0)) {
 		result.append(QStringLiteral("{};\r\n"));
 	} else {
@@ -34,7 +38,7 @@ QString const& SqmClass::getName() const {
 }
 
 std::shared_ptr<SqmStructure> SqmClass::rename(QString const& newName) const {
-	return std::make_shared<SqmClass>(newName, getObjects());
+	return std::make_shared<SqmClass>(newName, *this);
 }
 
 std::shared_ptr<SqmClass> SqmClass::replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, std::shared_ptr<SqmClass> current) const {
@@ -43,7 +47,7 @@ std::shared_ptr<SqmClass> SqmClass::replace(SqmStructure const& old, std::shared
 	if (!hasChange) {
 		return current;
 	}
-	return std::make_shared<SqmClass>(m_name, objects);
+	return std::make_shared<SqmClass>(m_name, SqmObjectList<SqmStructure>(getInheritedClassName(), objects));
 }
 
 std::shared_ptr<SqmClass> SqmClass::remove(SqmStructure const& old, std::shared_ptr<SqmClass> current) const {
@@ -52,7 +56,7 @@ std::shared_ptr<SqmClass> SqmClass::remove(SqmStructure const& old, std::shared_
 	if (!hasChange) {
 		return current;
 	}
-	return std::make_shared<SqmClass>(m_name, objects);
+	return std::make_shared<SqmClass>(m_name, SqmObjectList<SqmStructure>(getInheritedClassName(), objects));
 }
 
 SqmRoot SqmClass::insertClassItemsWithItemCountIncrement(std::vector<SqmObjectList<SqmStructure>> const& itemObjects, SqmRoot const& root) const {
@@ -78,7 +82,7 @@ SqmRoot SqmClass::insertClassItemsWithItemCountIncrement(std::vector<SqmObjectLi
 		newObjects.push_back(newItem);
 	}
 	
-	std::shared_ptr<SqmClass> newSelf = std::make_shared<SqmClass>(getName(), newObjects);
+	std::shared_ptr<SqmClass> newSelf = std::make_shared<SqmClass>(getName(), SqmObjectList<SqmStructure>(getInheritedClassName(), newObjects));
 	return root->replace(*this, newSelf, root);
 }
 
@@ -102,6 +106,6 @@ SqmRoot SqmClass::removeClassItemsWithItemCountDecrement(QSet<SqmStructure const
 		}
 	}
 
-	std::shared_ptr<SqmClass> newSelf = std::make_shared<SqmClass>(getName(), newObjects);
+	std::shared_ptr<SqmClass> newSelf = std::make_shared<SqmClass>(getName(), SqmObjectList<SqmStructure>(getInheritedClassName(), newObjects));
 	return root->replace(*this, newSelf, root);
 }

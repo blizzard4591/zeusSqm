@@ -15,10 +15,10 @@ SqmRoot SqmHandling::addVrShapeObjects(SqmRoot const& root, std::vector<Position
 		itemContents.push_back(newPosition(it->x, it->y, it->z));
 		itemContents.push_back(SqmProperty::newStringProperty(QStringLiteral("side"), QStringLiteral("Empty")));
 		itemContents.push_back(SqmProperty::newIntegerProperty(QStringLiteral("flags"), 5));
-		itemContents.push_back(std::make_shared<SqmClass>(QStringLiteral("Attributes"), SqmObjectList<SqmStructure>({})));
+		itemContents.push_back(std::make_shared<SqmClass>(QStringLiteral("Attributes"), SqmObjectList<SqmStructure>(QString(), {})));
 		itemContents.push_back(SqmProperty::newIntegerProperty(QStringLiteral("id"), nextFreeId++));
 		itemContents.push_back(SqmProperty::newStringProperty(QStringLiteral("type"), QStringLiteral("Land_VR_Shape_01_cube_1m_F")));
-		preliminaryClassItems.push_back(SqmObjectList<SqmStructure>(itemContents));
+		preliminaryClassItems.push_back(SqmObjectList<SqmStructure>(QString(), itemContents));
 	}
 	
 	SqmClass* classMission = dynamic_cast<SqmClass*>(root->getByName(QStringLiteral("Mission")));
@@ -39,7 +39,7 @@ SqmRoot SqmHandling::addVrShapeObjects(SqmRoot const& root, std::vector<Position
 std::shared_ptr<SqmClass> SqmHandling::newPosition(int x, int y, int z) {
 	std::vector<SqmArrayContents::ArrayEntry> positions = { x, z, y };
 	std::shared_ptr<SqmArray> positionArray = std::make_shared<SqmArray>(QStringLiteral("position"), positions);
-	return std::make_shared<SqmClass>(QStringLiteral("PositionInfo"), SqmObjectList<SqmStructure>({ positionArray }));
+	return std::make_shared<SqmClass>(QStringLiteral("PositionInfo"), SqmObjectList<SqmStructure>(QString(), { positionArray }));
 }
 
 SqmRoot SqmHandling::nextItemIds(SqmRoot const& root, int& firstNextId, int requestedIdCount) {

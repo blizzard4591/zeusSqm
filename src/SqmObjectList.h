@@ -19,7 +19,7 @@ class SqmObjectList : public SqmStructure {
 public:
 	typedef bool filterFunc(std::shared_ptr<T> const& a);
 
-	SqmObjectList(std::vector<std::shared_ptr<T>> const& objects);
+	SqmObjectList(QString const& inheritedClassName, std::vector<std::shared_ptr<T>> const& objects);
 	virtual ~SqmObjectList() {}
 
 	std::vector<std::shared_ptr<T>> const& getObjects() const;
@@ -47,6 +47,7 @@ public:
 	virtual bool toSqmStageTwo(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
 	virtual QString toSqm(int indentationLevel, FormatType const& format) const override;
 	virtual QString const& getName() const override;
+	QString const& getInheritedClassName() const;
 	virtual std::shared_ptr<SqmStructure> rename(QString const& newName) const override;
 
 	SqmObjectList<T> filter(filterFunc f) const;
@@ -61,6 +62,7 @@ protected:
 	std::vector<std::shared_ptr<T>> replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, bool& didChange) const;
 	std::vector<std::shared_ptr<T>> remove(SqmStructure const& old, bool& didChange) const;
 private:
+	QString const m_inheritedClassName;
 	std::vector<std::shared_ptr<T>> const m_objects;
 	QHash<QString, std::shared_ptr<T>> const m_nameToObject;
 

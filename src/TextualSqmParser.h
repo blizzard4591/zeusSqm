@@ -18,7 +18,7 @@ public:
 
 	static QString stripComments(QString const& input);
 private:
-	SqmObjectList<SqmStructure> parse(QString const& input, int offset, int length) const;
+	std::vector<std::shared_ptr<SqmStructure>> parse(QString const& input, int offset, int length) const;
 	int advanceOverLineBreaks(QString const& input, int offset, int length) const;
 	int findMatchingClosingCurlyBracket(QString const& input, int length, int posOfOpeningBracket) const;
 	int findMatchingQuote(QString const& input, int posOfOpeningQuote, int length) const;

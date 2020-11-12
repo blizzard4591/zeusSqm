@@ -11,7 +11,7 @@
 #include <memory>
 
 template <typename T>
-SqmObjectList<T>::SqmObjectList(std::vector<std::shared_ptr<T>> const& objects) : m_objects(objects), m_nameToObject(createNameToObjectMapping(objects)) {
+SqmObjectList<T>::SqmObjectList(QString const& inheritedClassName, std::vector<std::shared_ptr<T>> const& objects) : m_inheritedClassName(inheritedClassName), m_objects(objects), m_nameToObject(createNameToObjectMapping(objects)) {
 	//
 }
 
@@ -62,8 +62,9 @@ bool SqmObjectList<T>::toSqmStageTwo(QByteArray& output, QHash<SqmStructure cons
 		BinarizedSqm::overwriteOffset(output, offset, currentOffset);
 	}
 
-	// Inherited className, unsupported by us
-	BinarizedSqm::writeUint8(output, 0);
+	// Inherited className
+	BinarizedSqm::writeString(output, m_inheritedClassName);
+
 	// EntryCount as compressed integer
 	BinarizedSqm::writeCompressedInteger(output, m_objects.size());
 	// Class Entries
@@ -138,6 +139,11 @@ std::size_t SqmObjectList<T>::size() const {
 }
 
 template <typename T>
+QString const& SqmObjectList<T>::getInheritedClassName() const {
+	return m_inheritedClassName;
+}
+
+template <typename T>
 QString const& SqmObjectList<T>::getName() const {
 	//static QString rootName("_ROOT");
 	//return rootName;
@@ -162,7 +168,7 @@ template <typename T>
 SqmObjectList<T> SqmObjectList<T>::filter(filterFunc f) const {
 	std::vector<std::shared_ptr<T>> result;
 	std::copy_if(m_objects.begin(), m_objects.end(), std::back_inserter(result), f);
-	return SqmObjectList<T>(result);
+	return SqmObjectList<T>(getInheritedClassName(), result);
 }
 
 template <typename T>
@@ -264,7 +270,7 @@ SqmObjectList<SqmArray> SqmObjectList<T>::onlyArrays() const {
 			result.push_back(array);
 		}
 	}
-	return result;
+	return SqmObjectList<SqmArray>(getInheritedClassName(), result);
 }
 
 template <typename T>
@@ -276,7 +282,7 @@ SqmObjectList<SqmClass> SqmObjectList<T>::onlyClasses() const {
 			result.push_back(array);
 		}
 	}
-	return result;
+	return SqmObjectList<SqmClass>(getInheritedClassName(), result);
 }
 
 template <typename T>
@@ -288,7 +294,7 @@ SqmObjectList<SqmProperty> SqmObjectList<T>::onlyProperties() const {
 			result.push_back(array);
 		}
 	}
-	return result;
+	return SqmObjectList<SqmProperty>(getInheritedClassName(), result);
 }
 
 template <typename T>
@@ -398,7 +404,7 @@ std::shared_ptr<SqmObjectList<T>> SqmObjectList<T>::replace(SqmStructure const& 
 	if (!hasChange) {
 		return current;
 	}
-	return std::make_shared<SqmObjectList<T>>(objects);
+	return std::make_shared<SqmObjectList<T>>(getInheritedClassName(), objects);
 }
 
 template <typename T>
@@ -408,7 +414,7 @@ std::shared_ptr<SqmObjectList<T>> SqmObjectList<T>::remove(SqmStructure const& o
 	if (!hasChange) {
 		return current;
 	}
-	return std::make_shared<SqmObjectList<T>>(objects);
+	return std::make_shared<SqmObjectList<T>>(getInheritedClassName(), objects);
 }
 
 // Explicit template instantiation

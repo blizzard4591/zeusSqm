@@ -44,7 +44,7 @@ bool AllowedModsCheckModule::checkArguments(QCommandLineParser& parser) {
 		}
 
 		for (int i = 0; i < modList.size(); ++i) {
-			allowedMods.insert(modList.at(i));
+			allowedMods.insert(modList.at(i).toLower());
 		}
 
 		std::cout << "Found " << allowedMods.size() << " mods in mod-whitelist file." << std::endl;
@@ -76,7 +76,7 @@ std::shared_ptr<SqmObjectList<SqmStructure>> AllowedModsCheckModule::perform(std
 		bool dropEntry = false;
 		SqmArray::ArrayEntry const& entry = values.at(i);
 		if (entry.type == SqmArray::ArrayEntryType::STRING) {
-			QString const mod = std::get<QString>(entry.content);
+			QString const mod = std::get<QString>(entry.content).toLower();
 			if (!allowedMods.contains(mod)) {
 				std::cout << "Found mod '" << mod.toStdString() << "' which is NOT on the mod whitelist." << std::endl;
 				if (dropUnlistedMods) {
@@ -110,7 +110,7 @@ std::shared_ptr<SqmObjectList<SqmStructure>> AllowedModsCheckModule::perform(std
 		SqmObjectList<SqmClass> listClasses = addonsMetaDataList->onlyClasses();
 		std::vector<std::shared_ptr<SqmClass>> const& listObjects = listClasses.getObjects();
 		for (std::size_t i = 0; i < listObjects.size(); ++i) {
-			QString const& className = listObjects.at(i)->getPropertyValueAsString(QStringLiteral("className"));
+			QString const className = listObjects.at(i)->getPropertyValueAsString(QStringLiteral("className")).toLower();
 			if (modsToDrop.contains(className)) {
 				objectsToBeRemoved.insert(listObjects.at(i).get());
 			}

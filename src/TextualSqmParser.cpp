@@ -14,7 +14,7 @@ TextualSqmParser::TextualSqmParser() {
 
 SqmObjectList<SqmStructure> TextualSqmParser::parse(QString const& input) const {
 	auto t1 = std::chrono::high_resolution_clock::now();
-	SqmObjectList<SqmStructure> root = parse(input, 0, input.length());
+	SqmObjectList<SqmStructure> root = SqmObjectList<SqmStructure>(QString(), parse(input, 0, input.length()));
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 	std::cout << "Parsing SQM took " << duration << "ms." << std::endl;
@@ -58,7 +58,7 @@ QString TextualSqmParser::stripComments(QString const& input) {
 	return result;
 }
 
-SqmObjectList<SqmStructure> TextualSqmParser::parse(QString const& input, int offset, int length) const {
+std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const& input, int offset, int length) const {
 	std::vector<std::shared_ptr<SqmStructure>> objects;
 
 	static const QChar cR('\r');
@@ -80,6 +80,7 @@ SqmObjectList<SqmStructure> TextualSqmParser::parse(QString const& input, int of
 	static const QChar cOpeningCurlyBracket('{');
 	static const QChar cClosingCurlyBracket('}');
 	static const QChar cSemicolon(';');
+	static const QChar cColon(':');
 	static const QChar cComma(',');
 	static const QChar cQuote('"');
 
@@ -96,7 +97,16 @@ SqmObjectList<SqmStructure> TextualSqmParser::parse(QString const& input, int of
 					failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
 				}
 
-				QString const name = input.mid(offset + 6, posOfOpeningCurlyBracket - offset - 6).trimmed();
+				QString inheritedClassName;
+				QString className;
+				int const posOfColon = input.indexOf(cColon, offset + 6);
+				if ((posOfColon != -1) && (posOfColon < posOfOpeningCurlyBracket)) {
+					// This is a class with inheritance
+					className = input.mid(offset + 6, posOfColon - offset - 6).trimmed();
+					inheritedClassName = input.mid(posOfColon + 1, posOfOpeningCurlyBracket - posOfColon - 1).trimmed();
+				} else {
+					className = input.mid(offset + 6, posOfOpeningCurlyBracket - offset - 6).trimmed();
+				}
 				
 				int const posOfClosingCurlyBracket = findMatchingClosingCurlyBracket(input, length, posOfOpeningCurlyBracket);
 				if (posOfClosingCurlyBracket == -1) {
@@ -106,7 +116,7 @@ SqmObjectList<SqmStructure> TextualSqmParser::parse(QString const& input, int of
 				int innerPos = posOfOpeningCurlyBracket + 1;
 				innerPos = advanceOverLineBreaks(input, innerPos, length);
 
-				objects.push_back(std::make_shared<SqmClass>(name, parse(input, innerPos, posOfClosingCurlyBracket - 1)));
+				objects.push_back(std::make_shared<SqmClass>(className, SqmObjectList<SqmStructure>(inheritedClassName, parse(input, innerPos, posOfClosingCurlyBracket - 1))));
 
 				offset = posOfClosingCurlyBracket + 2;
 				offset = advanceOverLineBreaks(input, offset, length);

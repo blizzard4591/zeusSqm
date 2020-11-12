@@ -6,6 +6,9 @@
 #include <QDataStream>
 #include <QTextStream>
 
+#include "SqmDeleteClass.h"
+#include "SqmExternClass.h"
+
 #include "TextualSqmParser.h"
 #include "exceptions/FormatErrorException.h"
 
@@ -107,8 +110,7 @@ SqmArrayContents::ArrayEntry BinarizedSqmParser::parseArrayElement(QByteArray co
 		return SqmArrayContents::ArrayEntry(parseArrayContents(data, offset));
 	}
 	default:
-		std::cerr << "Unhandled Type '" << (int)type << "' in Array!" << std::endl;
-		throw zeusops::exceptions::FormatErrorException() << "Unhandled Type '" << (int)type << "' in Array!";
+		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled Type '" << (int)type << "' in Array!");
 	}
 }
 
@@ -161,8 +163,7 @@ std::shared_ptr<SqmStructure> BinarizedSqmParser::parseClassEntry(QByteArray con
 			return std::make_shared<SqmIntProperty>(propertyName, value);
 		}
 		default:
-			std::cerr << "Unhandled SubId '" << (int)subId << "' in ClassEntry!" << std::endl;
-			throw zeusops::exceptions::FormatErrorException() << "Unhandled SubId '" << (int)subId << "' in ClassEntry!";
+			LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled SubId '" << (int)subId << "' in ClassEntry!");
 		}
 		break;
 	}
@@ -171,10 +172,21 @@ std::shared_ptr<SqmStructure> BinarizedSqmParser::parseClassEntry(QByteArray con
 		// Array
 		return parseArray(data, offset);
 	}
+	case 3:
+	{
+		// Extern Class
+		QString const className = parseString(data, offset);
+		return std::make_shared<SqmExternClass>(className);
+	}
+	case 4:
+	{
+		// Delete Class
+		QString const className = parseString(data, offset);
+		return std::make_shared<SqmDeleteClass>(className);
+	}
 	default:
 	{
-		std::cerr << "Unhandled ClassEntry ID '" << (int)id << "' in ClassEntry!" << std::endl;
-		throw zeusops::exceptions::FormatErrorException() << "Unhandled ClassEntry ID '" << (int)id << "' in ClassEntry!";
+		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled ClassEntry ID '" << (int)id << "' in ClassEntry!");
 	}
 	}
 }
@@ -189,12 +201,7 @@ SqmObjectList<SqmStructure> BinarizedSqmParser::parseClassBody(QByteArray const&
 		items.push_back(parseClassEntry(data, offset));
 	}
 
-	if ((!inheritedClassname.isNull()) && (!inheritedClassname.isEmpty())) {
-		std::cout << "Parsed class with inherited class '" << inheritedClassname.toStdString() << "'." << std::endl;
-		throw zeusops::exceptions::FormatErrorException() << "Parsed class with inherited class '" << inheritedClassname.toStdString() << "'.";
-	}
-
-	return SqmObjectList<SqmStructure>(items);
+	return SqmObjectList<SqmStructure>(inheritedClassname, items);
 }
 
 bool BinarizedSqmParser::hasBinarizedSqmHeader(QByteArray const& file) {
@@ -206,8 +213,7 @@ SqmObjectList<SqmStructure> BinarizedSqmParser::parse(QByteArray& input) const {
 	auto t1 = std::chrono::high_resolution_clock::now();
 
 	if (!hasBinarizedSqmHeader(input)) {
-		std::cerr << "Header of SQM file corrupted, either this is not a binarized SQM or its broken." << std::endl;
-		throw zeusops::exceptions::FormatErrorException() << "Header of SQM file corrupted, either this is not a binarized SQM or its broken.";
+		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Header of SQM file corrupted, either this is not a binarized SQM or its broken.");
 	}
 
 	// Skip first 4 bytes (header)
