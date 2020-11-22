@@ -42,6 +42,7 @@ private:
 	static const QChar cl;
 	static const QChar cs;
 	static const QChar cEqual;
+	static const QChar cPlus;
 	static const QChar cOpeningBracket;
 	static const QChar cClosingBracket;
 	static const QChar cSemicolon;

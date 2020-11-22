@@ -6,6 +6,7 @@
 #include <QDataStream>
 #include <QTextStream>
 
+#include "SqmArrayWithFlags.h"
 #include "exceptions/FormatErrorException.h"
 
 
@@ -23,6 +24,7 @@ const QChar TextualSqmParser::cc('c');
 const QChar TextualSqmParser::cl('l');
 const QChar TextualSqmParser::cs('s');
 const QChar TextualSqmParser::cEqual('=');
+const QChar TextualSqmParser::cPlus('+');
 const QChar TextualSqmParser::cOpeningBracket('[');
 const QChar TextualSqmParser::cClosingBracket(']');
 const QChar TextualSqmParser::cOpeningCurlyBracket('{');
@@ -245,7 +247,7 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 				}
 
 				int equalToNonSpaceOffset = 1;
-				while (input.at(equalPos - equalToNonSpaceOffset) == cS || input.at(equalPos - equalToNonSpaceOffset) == cT) {
+				while (input.at(equalPos - equalToNonSpaceOffset) == cS || input.at(equalPos - equalToNonSpaceOffset) == cT || input.at(equalPos - equalToNonSpaceOffset) == cPlus) {
 					++equalToNonSpaceOffset;
 				}
 
@@ -254,6 +256,7 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 					if (input.at(equalPos - equalToNonSpaceOffset - 1) != cOpeningBracket) {
 						failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
 					}
+					bool const isPlusArray = input.at(equalPos - 1) == cPlus;
 
 					QString const name = input.mid(offset, (equalPos - equalToNonSpaceOffset - 1) - offset);
 					equalToNonSpaceOffset = 1;
@@ -281,7 +284,11 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 					int const matchLength = posOfClosingBracket + 2 - offset;
 					bool const isMultiLine = input.midRef(offset, matchLength).count(cN) > 0;
 
-					objects.push_back(std::make_shared<SqmArray>(name, arrayEntries));
+					if (isPlusArray) {
+						objects.push_back(std::make_shared<SqmArrayWithFlags>(name, 1, arrayEntries));
+					} else {
+						objects.push_back(std::make_shared<SqmArray>(name, arrayEntries));
+					}
 
 					offset += matchLength;
 					offset = advanceOverLineBreaks(input, offset, length);
