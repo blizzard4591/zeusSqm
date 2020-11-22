@@ -8,6 +8,34 @@
 
 #include "exceptions/FormatErrorException.h"
 
+
+const QChar TextualSqmParser::cR('\r');
+const QChar TextualSqmParser::cN('\n');
+const QChar TextualSqmParser::cT('\t');
+const QChar TextualSqmParser::cS(' ');
+const QChar TextualSqmParser::ca('a');
+const QChar TextualSqmParser::cz('z');
+const QChar TextualSqmParser::cA('A');
+const QChar TextualSqmParser::cZ('Z');
+const QChar TextualSqmParser::c0('0');
+const QChar TextualSqmParser::c9('9');
+const QChar TextualSqmParser::cc('c');
+const QChar TextualSqmParser::cl('l');
+const QChar TextualSqmParser::cs('s');
+const QChar TextualSqmParser::cEqual('=');
+const QChar TextualSqmParser::cOpeningBracket('[');
+const QChar TextualSqmParser::cClosingBracket(']');
+const QChar TextualSqmParser::cOpeningCurlyBracket('{');
+const QChar TextualSqmParser::cClosingCurlyBracket('}');
+const QChar TextualSqmParser::cSemicolon(';');
+const QChar TextualSqmParser::cColon(':');
+const QChar TextualSqmParser::cComma(',');
+const QChar TextualSqmParser::cQuote('"');
+const QChar TextualSqmParser::cStar('*');
+const QChar TextualSqmParser::cSlash('/');
+const QChar TextualSqmParser::cHashTag('#');
+
+
 TextualSqmParser::TextualSqmParser(bool beQuiet) : m_beQuiet(beQuiet) {
 	//
 }
@@ -40,12 +68,12 @@ QString TextualSqmParser::stripComments(QString const& input) {
 	int nextNewline = input.indexOf(newLine, offset);
 	while (nextNewline > -1) {
 		int pos = offset;
-		while (input.at(pos) == ' ' || input.at(pos) == '\t') {
+		while (input.at(pos) == cS || input.at(pos) == cT) {
 			++pos;
 		}
-		if (input.at(pos) == '/' && input.at(pos + 1) == '/') {
+		if (input.at(pos) == cSlash && input.at(pos + 1) == cSlash) {
 			// this is a comment line, strip.
-		} else if (input.at(pos) == '#') {
+		} else if (input.at(pos) == cHashTag) {
 			// this is a pragma line, strip.
 		} else {
 			result.append(input.mid(offset, nextNewline - offset + newLine.size()));
@@ -60,33 +88,64 @@ QString TextualSqmParser::stripComments(QString const& input) {
 	return result;
 }
 
+QVector<QStringRef> TextualSqmParser::splitArray(QStringRef const& contents, QString const& input, int offset) const {
+	QString const contentsString = contents.toString();
+	QVector<QStringRef> result;
+	int pos = 0;
+	int lastStart = 0;
+	while (pos < contents.length()) {
+		if (contents.at(pos) == cComma) {
+			result.push_back(contents.mid(lastStart, pos - lastStart));
+			lastStart = pos + 1;
+		} else if (contents.at(pos) == cOpeningCurlyBracket) {
+			int const posOfClosingCurlyBracket = findMatchingClosingCurlyBracket(contentsString, contentsString.length(), pos);
+			if (posOfClosingCurlyBracket == -1) {
+				failureReport("Failed to find matching closing bracket while splitting array. Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
+			}
+			pos = posOfClosingCurlyBracket;
+		}
+		++pos;
+	}
+	result.push_back(contents.mid(lastStart, pos - lastStart));
+
+	return result;
+}
+
+std::vector<SqmArrayContents::ArrayEntry> TextualSqmParser::parseArray(QStringRef const& contents, QString const& input, int offset) const {
+	std::vector<SqmArrayContents::ArrayEntry> arrayEntries;
+	if (contents.trimmed().length() > 0) {
+		QVector<QStringRef> parts = splitArray(contents, input, offset);
+		for (int i = 0; i < parts.size(); ++i) {
+			QString const trimmed = parts.at(i).trimmed().toString();
+			if (trimmed.length() == 0) {
+				continue;
+			}
+			SqmArrayContents::ArrayEntry entry;
+			if (trimmed.at(0) == cQuote) {
+				entry = SqmArrayContents::ArrayEntry(SqmStructure::unescapeQuotesInString(trimmed.mid(1, trimmed.size() - 2)));
+			} else if (trimmed.at(0) == cOpeningCurlyBracket) {
+				// This is a sub-array
+				int const subPosOfOpeningBracket = 0;
+				int const subPosOfClosingBracket = findMatchingClosingCurlyBracket(trimmed, trimmed.length(), subPosOfOpeningBracket);
+				if (subPosOfClosingBracket == -1) {
+					failureReport("Failed to find matching closing bracket while parsing sub-array. Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
+				}
+
+				QStringRef const arrayContent = trimmed.midRef(subPosOfOpeningBracket + 1, subPosOfClosingBracket - subPosOfOpeningBracket - 1);
+				entry = SqmArrayContents::ArrayEntry(parseArray(arrayContent, input, offset));
+			} else if ((trimmed.indexOf('.') > -1) || (trimmed.compare(QStringLiteral("-0")) == 0)) {
+				entry = SqmArrayContents::ArrayEntry(trimmed.toFloat(), trimmed);
+			} else {
+				entry = SqmArrayContents::ArrayEntry(trimmed.toInt());
+			}
+			arrayEntries.push_back(entry);
+		}
+	}
+	return arrayEntries;
+}
+
 std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const& input, int offset, int length) const {
 	std::vector<std::shared_ptr<SqmStructure>> objects;
-
-	static const QChar cR('\r');
-	static const QChar cN('\n');
-	static const QChar cT('\t');
-	static const QChar cS(' ');
-	static const QChar ca('a');
-	static const QChar cz('z');
-	static const QChar cA('A');
-	static const QChar cZ('Z');
-	static const QChar c0('0');
-	static const QChar c9('9');
-	static const QChar cc('c');
-	static const QChar cl('l');
-	static const QChar cs('s');
-	static const QChar cEqual('=');
-	static const QChar cOpeningBracket('[');
-	static const QChar cClosingBracket(']');
-	static const QChar cOpeningCurlyBracket('{');
-	static const QChar cClosingCurlyBracket('}');
-	static const QChar cSemicolon(';');
-	static const QChar cColon(':');
-	static const QChar cComma(',');
-	static const QChar cQuote('"');
-	static const QChar cSlash('/');
-	static const QChar cHashTag('#');
 
 	while (offset < length) {
 		QChar const c = input.at(offset);
@@ -102,6 +161,14 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 				} else {
 					offset = length;
 				}
+			} else if ((c == cSlash) && ((offset + 1) < length) && (input.at(offset + 1) == cStar)) {
+				// Comment, skip!
+				int posEnd = input.indexOf(QStringLiteral("*/"), offset);
+				if (posEnd == -1) {
+					failureReport("Next input 'NEXT_INPUT' could not be parsed (line LINE, offset OFFSET)", input, offset);
+				}
+				offset = posEnd + 2;
+				offset = advanceOverLineBreaks(input, offset, length);
 			} else if ((c == cHashTag) && ((offset + 7) < length) && (input.midRef(offset, 7).compare(QStringLiteral("#define")) == 0)) {
 				// Pragma define, skip.
 				int posN = input.indexOf(cN, offset);
@@ -150,7 +217,6 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 					// This is a class with inheritance
 					className = input.mid(offset + 6, posOfColon - offset - 6).trimmed();
 					inheritedClassName = input.mid(posOfColon + 1, contentStart - posOfColon - 1).trimmed();
-					std::cout << "Found class '" << className.toStdString() << "' with inheritance from: " << inheritedClassName.toStdString() << std::endl;
 				} else {
 					className = input.mid(offset + 6, contentStart - offset - 6).trimmed();
 				}
@@ -210,25 +276,7 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 					}
 
 					QStringRef const arrayContent = input.midRef(posOfOpeningBracket + 1, posOfClosingBracket - posOfOpeningBracket - 1);
-					std::vector<SqmArrayContents::ArrayEntry> arrayEntries;
-					if (arrayContent.trimmed().length() > 0) {
-						QVector<QStringRef> parts = arrayContent.split(cComma);	
-						for (int i = 0; i < parts.size(); ++i) {
-							QString const trimmed = parts.at(i).trimmed().toString();
-							if (trimmed.length() == 0) {
-								continue;
-							}
-							SqmArrayContents::ArrayEntry entry;
-							if (trimmed.at(0) == cQuote) {
-								entry = SqmArrayContents::ArrayEntry(SqmStructure::unescapeQuotesInString(trimmed.mid(1, trimmed.size() - 2)));
-							} else if ((trimmed.indexOf('.') > -1) || (trimmed.compare(QStringLiteral("-0")) == 0)) {
-								entry = SqmArrayContents::ArrayEntry(trimmed.toFloat(), trimmed);
-							} else {
-								entry = SqmArrayContents::ArrayEntry(trimmed.toInt());
-							}
-							arrayEntries.push_back(entry);
-						}
-					}					
+					std::vector<SqmArrayContents::ArrayEntry> arrayEntries = parseArray(arrayContent, input, offset);
 
 					int const matchLength = posOfClosingBracket + 2 - offset;
 					bool const isMultiLine = input.midRef(offset, matchLength).count(cN) > 0;
@@ -273,8 +321,14 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 						objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
 					} else {
 						bool ok = false;
-						objects.push_back(std::make_shared<SqmIntProperty>(name, value.toInt(&ok)));
-						if (!ok) failureReport("Could not parse integer property (line LINE, offset OFFSET)", input, offset);
+						int const i = value.toInt(&ok);
+						
+						if (!ok) {
+							// Fall back to float for big numbers
+							objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
+						} else {
+							objects.push_back(std::make_shared<SqmIntProperty>(name, i));
+						}
 					}
 
 					offset = posOfClosingSemicolon + 1;
@@ -299,7 +353,6 @@ int TextualSqmParser::advanceOverLineBreaks(QString const& input, int offset, in
 int TextualSqmParser::findMatchingQuote(QString const& input, int posOfOpeningQuote, int length) const {
 	int pos = posOfOpeningQuote + 1;
 	static const QChar cQ('"');
-	static const QChar cS(' ');
 	static const QChar cB('\\');
 	static const QChar cn('n');
 	while (pos < length) {
@@ -321,19 +374,16 @@ int TextualSqmParser::findMatchingQuote(QString const& input, int posOfOpeningQu
 }
 
 int TextualSqmParser::findMatchingClosingCurlyBracket(QString const& input, int length, int posOfOpeningBracket) const {
-	static const QChar cOpeningCurly('{');
-	static const QChar cClosingCurly('}');
-	static const QChar cQuote('"');
 	int pos = posOfOpeningBracket + 1;
 	int depth = 0;
 	while (pos < length) {
-		if (input.at(pos) == cOpeningCurly) {
+		if (input.at(pos) == cOpeningCurlyBracket) {
 			++depth;
 		} else if (input.at(pos) == cQuote) {
 			// Urgh, a string. Since the string might contain "escaped" curly brackets, we need to skip it...
 			int const closingQuoteLocation = findMatchingQuote(input, pos, length);
 			pos = closingQuoteLocation;
-		} else if (input.at(pos) == cClosingCurly) {
+		} else if (input.at(pos) == cClosingCurlyBracket) {
 			if (depth == 0) {
 				return pos;
 			}
