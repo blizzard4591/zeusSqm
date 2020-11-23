@@ -101,7 +101,8 @@ QByteArray loadConfigFromPbo(std::string const& pboFileName) {
 	
 			static const QByteArray includeBytes = QStringLiteral("#include \"").toUtf8();
 
-			int pos = configCpp.indexOf(includeBytes);
+			int startOffset = 0;
+			int pos = configCpp.indexOf(includeBytes, startOffset);
 			while (pos != -1) {
 				int const startPos = pos;
 				// move to first "
@@ -115,11 +116,18 @@ QByteArray loadConfigFromPbo(std::string const& pboFileName) {
 				}
 
 				QByteArray const matched = configCpp.mid(pos + 1, posOfClosingQuote - pos - 1);
-				std::cout << "Found include for '" << matched.toStdString() << "', following... " << std::endl;
-				QByteArray const includeData = loadFileFromPbo(pboFileName, pbo_file, matched.toStdString());
-				configCpp.replace(startPos, posOfClosingQuote - startPos + 1, includeData);
+				std::string const matchedStr = matched.toStdString();
+				std::cout << "Found include for '" << matchedStr << "', following... " << std::endl;
+				if (pboHasFile(pbo_file, matchedStr)) {
+					QByteArray const includeData = loadFileFromPbo(pboFileName, pbo_file, matchedStr);
+					configCpp.replace(startPos, posOfClosingQuote - startPos + 1, includeData);
+					startOffset = 0;
+				} else {
+					std::cerr << "Warning: Could not resolve include '" << matchedStr << "', ignoring!" << std::endl;
+					startOffset = pos + 1;
+				}
 
-				pos = configCpp.indexOf(includeBytes);
+				pos = configCpp.indexOf(includeBytes, startOffset);
 			}
 
 			QFile debugOut(QString("debug_%1_config.txt").arg(QFileInfo(QString::fromStdString(pboFileName)).baseName()));
@@ -203,7 +211,7 @@ int main(int argc, char *argv[]) {
 			}
 		} catch (zeusops::exceptions::FormatErrorExceptionImpl const& e) {
 			// Ignore for now.
-			return -1;
+			std::cerr << "Ignoring file '" << pboFiles.at(i).toStdString() << "' due to parsing exception: " << e.what() << std::endl;
 		}
 	}
 	std::cout << "Found a total of " << modNames.size() << " mods." << std::endl;

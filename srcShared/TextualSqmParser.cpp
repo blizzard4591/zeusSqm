@@ -171,8 +171,17 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 				}
 				offset = posEnd + 2;
 				offset = advanceOverLineBreaks(input, offset, length);
-			} else if ((c == cHashTag) && ((offset + 7) < length) && (input.midRef(offset, 7).compare(QStringLiteral("#define")) == 0)) {
+			} else if ((c == cHashTag) && ((offset + 6) < length) && (input.midRef(offset, 7).compare(QStringLiteral("#define")) == 0)) {
 				// Pragma define, skip.
+				int posN = input.indexOf(cN, offset);
+				if (posN != -1) {
+					offset = posN;
+					offset = advanceOverLineBreaks(input, offset, length);
+				} else {
+					offset = length;
+				}
+			} else if ((c == cHashTag) && ((offset + 7) < length) && (input.midRef(offset, 8).compare(QStringLiteral("#include")) == 0)) {
+				// Pragma include, skip.
 				int posN = input.indexOf(cN, offset);
 				if (posN != -1) {
 					offset = posN;
