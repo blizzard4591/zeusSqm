@@ -1,0 +1,3 @@
+Based on work by StidOfficial, see https://github.com/StidOfficial/libpbo.
+
+Licensed under the GPL v3.
