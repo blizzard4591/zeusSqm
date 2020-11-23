@@ -1,13 +1,18 @@
 #include "SqmArrayWithFlags.h"
 
 #include "BinarizedSqm.h"
+#include "exceptions/FormatErrorException.h"
 
 SqmArrayWithFlags::SqmArrayWithFlags(QString const& name, quint32 flags, std::vector<ArrayEntry> const& entries) : SqmArrayContents(entries), m_name(name), m_flags(flags) {
-	//
+	if (flags != 1) {
+		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Flags of array are not equal to one: '" << flags << "'!");
+	}
 }
 
 SqmArrayWithFlags::SqmArrayWithFlags(QString const& name, quint32 flags, SqmArrayContents const& entries) : SqmArrayContents(entries), m_name(name), m_flags(flags) {
-	//
+	if (flags != 1) {
+		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Flags of array are not equal to one: '" << flags << "'!");
+	}
 }
 
 void SqmArrayWithFlags::toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const {

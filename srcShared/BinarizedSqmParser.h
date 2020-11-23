@@ -4,6 +4,7 @@
 #include <QByteArray>
 
 #include "SqmArray.h"
+#include "SqmArrayWithFlags.h"
 #include "SqmClass.h"
 #include "SqmObjectList.h"
 #include "SqmProperty.h"
@@ -29,6 +30,7 @@ private:
 	static QString parseString(QByteArray const& data, int& offset);
 
 	static std::shared_ptr<SqmArray> parseArray(QByteArray const& data, int& offset);
+	static std::shared_ptr<SqmArrayWithFlags> parseArrayWithFlags(QByteArray const& data, int& offset);
 	static SqmArrayContents parseArrayContents(QByteArray const& data, int& offset);
 	static SqmArrayContents::ArrayEntry parseArrayElement(QByteArray const& data, int& offset);
 

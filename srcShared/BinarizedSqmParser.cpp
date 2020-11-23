@@ -110,7 +110,7 @@ SqmArrayContents::ArrayEntry BinarizedSqmParser::parseArrayElement(QByteArray co
 		return SqmArrayContents::ArrayEntry(parseArrayContents(data, offset));
 	}
 	default:
-		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled Type '" << (int)type << "' in Array!");
+		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled Type '" << (int)type << "' in Array at offset " << offset << "!");
 	}
 }
 
@@ -126,6 +126,16 @@ SqmArrayContents BinarizedSqmParser::parseArrayContents(QByteArray const& data, 
 std::shared_ptr<SqmArray> BinarizedSqmParser::parseArray(QByteArray const& data, int& offset) {
 	QString const name = parseString(data, offset);
 	return std::make_shared<SqmArray>(name, parseArrayContents(data, offset));
+}
+
+std::shared_ptr<SqmArrayWithFlags> BinarizedSqmParser::parseArrayWithFlags(QByteArray const& data, int& offset) {
+	quint32 const flags = parseUInt32(data, offset);
+	if (flags != 1) {
+		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled flags '" << (int)flags << "' in Array at offset " << offset << "!");
+	}
+
+	QString const name = parseString(data, offset);
+	return std::make_shared<SqmArrayWithFlags>(name, flags, parseArrayContents(data, offset));
 }
 
 std::shared_ptr<SqmStructure> BinarizedSqmParser::parseClassEntry(QByteArray const& data, int& offset) {
@@ -163,7 +173,7 @@ std::shared_ptr<SqmStructure> BinarizedSqmParser::parseClassEntry(QByteArray con
 			return std::make_shared<SqmIntProperty>(propertyName, value);
 		}
 		default:
-			LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled SubId '" << (int)subId << "' in ClassEntry!");
+			LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled SubId '" << (int)subId << "' in ClassEntry at offset " << offset << "!");
 		}
 		break;
 	}
@@ -184,9 +194,14 @@ std::shared_ptr<SqmStructure> BinarizedSqmParser::parseClassEntry(QByteArray con
 		QString const className = parseString(data, offset);
 		return std::make_shared<SqmDeleteClass>(className);
 	}
+	case 5:
+	{
+		// Array with Flags
+		return parseArrayWithFlags(data, offset);
+	}
 	default:
 	{
-		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled ClassEntry ID '" << (int)id << "' in ClassEntry!");
+		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled ClassEntry ID '" << (int)id << "' in ClassEntry at offset " << offset << "!");
 	}
 	}
 }

@@ -88,7 +88,13 @@ QByteArray loadConfigFromPbo(std::string const& pboFileName) {
 		pbo_file.unpack();
 
 		if (pboHasFile(pbo_file, searchFileNameBin)) {
-			return loadFileFromPbo(pboFileName, pbo_file, searchFileNameBin);
+			QByteArray const configBin = loadFileFromPbo(pboFileName, pbo_file, searchFileNameBin);
+			QFile debugOut(QString("debug_%1_config.bin").arg(QFileInfo(QString::fromStdString(pboFileName)).baseName()));
+			debugOut.open(QFile::WriteOnly);
+			debugOut.write(configBin);
+			debugOut.close();
+
+			return configBin;
 		} else if (pboHasFile(pbo_file, searchFileNameTxt)) {
 			QByteArray configCpp = loadFileFromPbo(pboFileName, pbo_file, searchFileNameTxt);
 			//QString config = QString::fromUtf8(configCpp);
@@ -116,7 +122,7 @@ QByteArray loadConfigFromPbo(std::string const& pboFileName) {
 				pos = configCpp.indexOf(includeBytes);
 			}
 
-			QFile debugOut("debug_config.bin");
+			QFile debugOut(QString("debug_%1_config.txt").arg(QFileInfo(QString::fromStdString(pboFileName)).baseName()));
 			debugOut.open(QFile::WriteOnly);
 			debugOut.write(configCpp);
 			debugOut.close();
@@ -132,7 +138,7 @@ QByteArray loadConfigFromPbo(std::string const& pboFileName) {
 	return QByteArray();
 }
 
-QString extractModNameFromPbo(std::string const& pboFileName) {
+QStringList extractModNamesFromPbo(std::string const& pboFileName) {
 	QByteArray configFile = loadConfigFromPbo(pboFileName);
 	bool const isBinarized = BinarizedSqmParser::hasBinarizedSqmHeader(configFile);
 	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects;
@@ -153,11 +159,12 @@ QString extractModNameFromPbo(std::string const& pboFileName) {
 	}
 
 	SqmObjectList<SqmClass> patchClasses = sqmObjects->getClass(QStringLiteral("CfgPatches"))->onlyClasses();
-	if (patchClasses.size() != 1) {
-		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Failed to parse file '" << pboFileName << "', class 'CfgPatches' has " << patchClasses.size() << " sub-classes instead of 1!");
+	QStringList result;
+	for (auto it = patchClasses.begin(), end = patchClasses.end(); it != end; ++it) {
+		result.append((*it)->getName());
 	}
 
-	return (*patchClasses.begin())->getName();
+	return result;
 }
 
 int main(int argc, char *argv[]) {
@@ -189,9 +196,11 @@ int main(int argc, char *argv[]) {
 	std::cout << "Found " << pboFiles.size() << " PBO files." << std::endl;
 	for (int i = 0; i < pboFiles.size(); ++i) {
 		try {
-			QString const modName = extractModNameFromPbo(pboFiles.at(i).toStdString());
-			modNames.append(modName);
-			std::cout << "Found mod with name '" << modName.toStdString() << "'." << std::endl;
+			QStringList const subModNames = extractModNamesFromPbo(pboFiles.at(i).toStdString());
+			modNames.append(subModNames);
+			for (int i = 0; i < subModNames.size(); ++i) {
+				std::cout << "Found mod with name '" << subModNames.at(i).toStdString() << "'." << std::endl;
+			}
 		} catch (zeusops::exceptions::FormatErrorExceptionImpl const& e) {
 			// Ignore for now.
 			return -1;
