@@ -222,6 +222,7 @@ namespace PBO {
 	}
 
 	void PBO::pack() {
+		m_file.setFileName(m_path);
 		if (!m_file.open(QFile::WriteOnly))
 			throw std::logic_error("Failed to open output for writing!");
 
@@ -267,6 +268,7 @@ namespace PBO {
 	}
 
 	void PBO::unpack() {
+		m_file.setFileName(m_path);
 		if (!m_file.open(QFile::ReadOnly))
 			throw std::logic_error("Failed to open input file for reading!");
 
