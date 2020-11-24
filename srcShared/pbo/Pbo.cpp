@@ -17,7 +17,7 @@ namespace PBO {
 		open(file_path);
 	}
 
-	PBO::PBO(bool signed_file) : std::vector<std::shared_ptr<Entry>>(), m_hashContext(QCryptographicHash::Sha1), m_file() {
+	PBO::PBO(bool signed_file) : std::vector<std::shared_ptr<Entry>>(), m_hash_context(QCryptographicHash::Sha1), m_file() {
 		m_signed = signed_file;
 	}
 
@@ -59,9 +59,10 @@ namespace PBO {
 		m_file.close();
 
 		clear();
+		m_path_to_entry_map.clear();
 
 		if (is_signed())
-			m_hashContext.reset();
+			m_hash_context.reset();
 
 		QFileInfo fileInfo(m_path);
 		if (fileInfo.isDir())
@@ -69,7 +70,7 @@ namespace PBO {
 	}
 
 	void PBO::read(Entry*& entry) {
-		QString entry_path;
+		QByteArray entry_path;
 		uint32_t entry_packing_method;
 		uint32_t entry_original_size;
 		uint32_t entry_reserved;
@@ -140,7 +141,7 @@ namespace PBO {
 		QByteArray data;
 		while (true) {
 			QByteArray const chunk = m_file.peek(4096);
-			int const pos = chunk.indexOf('\0');
+			qint64 const pos = chunk.indexOf('\0');
 			if (pos == -1) {
 				data.append(m_file.read(4096));
 			} else {
@@ -152,15 +153,34 @@ namespace PBO {
 		text = QString::fromUtf8(data);
 
 		if (is_signed()) {
-			m_hashContext.addData(data);
+			m_hash_context.addData(data);
 		}
+	}
+
+	void PBO::read(QByteArray& target) {
+		QByteArray data;
+		while (true) {
+			QByteArray const chunk = m_file.peek(4096);
+			qint64 const pos = chunk.indexOf('\0');
+			if (pos == -1) {
+				data.append(m_file.read(4096));
+			} else {
+				data.append(m_file.read(pos + 1));
+				break;
+			}
+		}
+
+		if (is_signed()) {
+			m_hash_context.addData(data);
+		}
+		target = data;
 	}
 
 	void PBO::read(char* s, qint64 n) {
 		m_file.read(s, n);
 
 		if (is_signed()) {
-			m_hashContext.addData(s, n);
+			m_hash_context.addData(s, n);
 		}
 	}
 
@@ -217,7 +237,7 @@ namespace PBO {
 		m_file.write(s, n);
 
 		if (is_signed()) {
-			m_hashContext.addData(s, n);
+			m_hash_context.addData(s, n);
 		}
 	}
 
@@ -258,7 +278,7 @@ namespace PBO {
 		}
 
 		// Write data signature
-		QByteArray const digest = m_hashContext.result();
+		QByteArray const digest = m_hash_context.result();
 		
 		m_file.write("\0", 1);
 		m_file.write(digest.data(), digest.size());
@@ -285,7 +305,10 @@ namespace PBO {
 				break;
 			}
 
-			emplace_back(entry);
+			std::shared_ptr<Entry> const ptr_entry = std::make_shared<Entry>(*entry);
+			m_path_to_entry_map.insert(entry->get_path_as_bytes(), ptr_entry);
+			push_back(ptr_entry);
+			delete entry;
 
 			if (m_file.atEnd())
 				throw std::logic_error("No zero entry found");
@@ -319,7 +342,7 @@ namespace PBO {
 			QByteArray const pbo_digest = m_file.read(SHA_DIGEST_LENGTH);
 			set_signature(pbo_digest);
 
-			QByteArray const file_digest = m_hashContext.result();
+			QByteArray const file_digest = m_hash_context.result();
 			set_file_signature(file_digest);
 		} else if (is_signed()) {
 			throw std::logic_error("Signature not found");
@@ -330,9 +353,17 @@ namespace PBO {
 		}
 	}
 
+	bool PBO::has_file(QByteArray const& path) const {
+		return m_path_to_entry_map.contains(path);
+	}
+
+	Entry const& PBO::get_file(QByteArray const& path) const {
+		return **m_path_to_entry_map.constFind(path);
+	}
+
 	PBO::~PBO() {
 		if (is_signed()) {
-			m_hashContext.reset();
+			m_hash_context.reset();
 		}
 
 		m_file.close();

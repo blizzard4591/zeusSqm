@@ -8,6 +8,7 @@
 
 #include <QCryptographicHash>
 #include <QFile>
+#include <QMap>
 #include <QString>
 
 #include <memory>
@@ -30,19 +31,25 @@ namespace PBO {
 		QString& file_signature();
 		void open(QString const& file_path);
 
+		bool has_file(QByteArray const& path) const;
+		Entry const& get_file(QByteArray const& path) const;
+
 		void pack();
 		void unpack();
 	private:
-		QCryptographicHash m_hashContext;
+		QCryptographicHash m_hash_context;
 		QString m_path;
 		bool m_signed;
 		QFile m_file;
 		QString m_checksum;
 		QString m_file_checksum;
 
+		QMap<QByteArray, std::shared_ptr<Entry>> m_path_to_entry_map;
+
 		void read(Entry*& entry);
 		void read(uint32_t& value);
 		void read(QString& text);
+		void read(QByteArray& data);
 		void read(char* s, qint64 n);
 		void write(Entry* entry);
 		void write(uint32_t value);

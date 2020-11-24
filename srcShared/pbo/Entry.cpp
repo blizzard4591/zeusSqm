@@ -25,26 +25,31 @@ namespace PBO {
 		set_timestamp(0);
 	}
 
-	QString const& Entry::get_file_path() {
+	QString const& Entry::get_file_path() const {
 		return m_file_path;
 	}
 
-	void Entry::set_path(QString const& path) {
+	void Entry::set_path(QByteArray const& path) {
 		if (path.length() > ENTRY_PATH_LEN)
 			throw std::length_error("Invalid path length");
 
-		m_path = path;
+		m_path = QString::fromUtf8(path);
+		m_pathAsBytes = path.left(path.size() - 1);
 	}
 
-	QString const& Entry::get_path() {
+	QString const& Entry::get_path() const {
 		return m_path;
+	}
+
+	QByteArray const& Entry::get_path_as_bytes() const {
+		return m_pathAsBytes;
 	}
 
 	void Entry::set_packing_method(uint32_t packing_method) {
 		m_packing_method = packing_method;
 	}
 
-	uint32_t Entry::get_packing_method() {
+	uint32_t Entry::get_packing_method() const {
 		return m_packing_method;
 	}
 
@@ -52,7 +57,7 @@ namespace PBO {
 		m_original_size = original_size;
 	}
 
-	uint32_t Entry::get_original_size() {
+	uint32_t Entry::get_original_size() const {
 		return m_original_size;
 	}
 
@@ -60,7 +65,7 @@ namespace PBO {
 		m_reserved = reserved;
 	}
 
-	uint32_t Entry::get_reserved() {
+	uint32_t Entry::get_reserved() const {
 		return m_reserved;
 	}
 
@@ -68,7 +73,7 @@ namespace PBO {
 		m_timestamp = timestamp;
 	}
 
-	uint32_t Entry::get_timestamp() {
+	uint32_t Entry::get_timestamp() const {
 		return m_timestamp;
 	}
 
@@ -76,7 +81,7 @@ namespace PBO {
 		m_data_size = data_size;
 	}
 
-	int Entry::get_data_size() {
+	int Entry::get_data_size() const {
 		return m_data_size;
 	}
 
@@ -84,7 +89,7 @@ namespace PBO {
 		m_data_offset = data_offset;
 	}
 
-	std::streampos Entry::get_data_offset() {
+	std::streampos Entry::get_data_offset() const {
 		return m_data_offset;
 	}
 
@@ -92,17 +97,17 @@ namespace PBO {
 		return m_properties;
 	}
 
-	bool Entry::is_version_entry() {
+	bool Entry::is_version_entry() const {
 		return get_packing_method() == PBO::PackingMethod::Version;
 	}
 
-	bool Entry::is_file_entry() {
+	bool Entry::is_file_entry() const {
 		return get_packing_method() == PBO::PackingMethod::Uncompressed ||
 			get_packing_method() == PBO::PackingMethod::Compressed ||
 			get_packing_method() == PBO::PackingMethod::Encrypted;
 	}
 
-	bool Entry::is_zero_entry() {
+	bool Entry::is_zero_entry() const {
 		return m_path.length() == 0 &&
 			m_packing_method == 0 &&
 			m_original_size == 0 &&
