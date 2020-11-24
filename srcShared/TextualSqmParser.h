@@ -16,11 +16,14 @@ public:
 	SqmObjectList<SqmStructure> parse(QString const& input) const;
 	SqmStructure::FormatType getFormat(QString const& input) const;
 
+	void setQuitAfterCfgPatches(bool value);
+
 	static QString stripComments(QString const& input);
 private:
 	bool const m_beQuiet;
+	bool m_quitAfterCfgPatches;
 
-	std::vector<std::shared_ptr<SqmStructure>> parse(QString const& input, int offset, int length) const;
+	std::vector<std::shared_ptr<SqmStructure>> parse(QString const& input, int offset, int length, bool readContent = true) const;
 	QVector<QStringRef> splitArray(QStringRef const& contents, QString const& input, int offset) const;
 	std::vector<SqmArrayContents::ArrayEntry> parseArray(QStringRef const& contents, QString const& input, int offset) const;
 	int advanceOverLineBreaks(QString const& input, int offset, int length) const;

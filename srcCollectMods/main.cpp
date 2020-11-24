@@ -52,7 +52,7 @@ QByteArray loadFileFromPbo(QString const& pboFileName, PBO::PBO& pbo, QByteArray
 		QByteArray const fileData = input.read(size);
 		input.close();
 
-		std::cout << "Loaded '" << filename.toStdString() << "' (" << size << " Bytes) from PBO." << std::endl;
+		std::cout << "Loaded '" << filename.toStdString() << "' (" << size << " Bytes) from PBO '" << pboFileName.toStdString() << "'." << std::endl;
 		return fileData;
 	}
 
@@ -136,6 +136,7 @@ QStringList extractModNamesFromPbo(QString const& pboFileName) {
 		QString const missionFileData = stream.readAll();
 
 		TextualSqmParser sqmParser(true);
+		sqmParser.setQuitAfterCfgPatches(true);
 		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
 	}
 

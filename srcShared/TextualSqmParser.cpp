@@ -38,8 +38,12 @@ const QChar TextualSqmParser::cSlash('/');
 const QChar TextualSqmParser::cHashTag('#');
 
 
-TextualSqmParser::TextualSqmParser(bool beQuiet) : m_beQuiet(beQuiet) {
+TextualSqmParser::TextualSqmParser(bool beQuiet) : m_beQuiet(beQuiet), m_quitAfterCfgPatches(false) {
 	//
+}
+
+void TextualSqmParser::setQuitAfterCfgPatches(bool value) {
+	m_quitAfterCfgPatches = value;
 }
 
 SqmObjectList<SqmStructure> TextualSqmParser::parse(QString const& input) const {
@@ -146,7 +150,7 @@ std::vector<SqmArrayContents::ArrayEntry> TextualSqmParser::parseArray(QStringRe
 	return arrayEntries;
 }
 
-std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const& input, int offset, int length) const {
+std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const& input, int offset, int length, bool readContent) const {
 	std::vector<std::shared_ptr<SqmStructure>> objects;
 
 	while (offset < length) {
@@ -245,7 +249,17 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 					int innerPos = posOfOpeningCurlyBracket + 1;
 					innerPos = advanceOverLineBreaks(input, innerPos, length);
 
-					objects.push_back(std::make_shared<SqmClass>(className, SqmObjectList<SqmStructure>(inheritedClassName, parse(input, innerPos, posOfClosingCurlyBracket - 1))));
+					if (readContent) {
+						bool const isInCfgPatches = className.compare(QStringLiteral("CfgPatches")) == 0;
+						objects.push_back(std::make_shared<SqmClass>(className, SqmObjectList<SqmStructure>(inheritedClassName, parse(input, innerPos, posOfClosingCurlyBracket - 1, !(m_quitAfterCfgPatches && isInCfgPatches)))));
+
+						if (isInCfgPatches && m_quitAfterCfgPatches) {
+							return objects;
+						}
+					} else {
+						objects.push_back(std::make_shared<SqmClass>(className, SqmObjectList<SqmStructure>(inheritedClassName, {})));
+					}
+
 					offset = posOfClosingCurlyBracket + 2;
 				}				
 				offset = advanceOverLineBreaks(input, offset, length);
