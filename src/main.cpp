@@ -15,8 +15,9 @@
 #include "ObjectBuilderModule.h"
 #include "BinarizedSqmParser.h"
 #include "TextualSqmParser.h"
+#include "exceptions/FormatErrorException.h"
 
-#include "libpbo/pbo.hpp"
+#include "pbo/pbo.h"
 
 #include "version.h"
 
@@ -70,11 +71,11 @@ int main(int argc, char *argv[]) {
 	parser.process(app);
 
 	QStringList args = parser.positionalArguments();
-	std::string sqmFileName = "mission.sqm";
+	QString sqmFileName = "mission.sqm";
 	if (args.isEmpty()) {
 		args << "mission.sqm";
 	} else {
-		sqmFileName = args.at(0).toStdString();
+		sqmFileName = args.at(0);
 	}
 
 	if (args.isEmpty() || (args.size() < 2 && !parser.isSet(inplaceOption))) {
@@ -89,9 +90,9 @@ int main(int argc, char *argv[]) {
 	QString const inputFilename = args.at(0);
 	bool const isFromPbo = inputFilename.endsWith(".pbo");
 	if (isFromPbo) {
-		PBO::PBO pbo_file(inputFilename.toStdString());
+		PBO::PBO pbo_file(inputFilename);
 		if (parser.isSet(pboFileOption)) {
-			sqmFileName = parser.value(pboFileOption).toStdString();
+			sqmFileName = parser.value(pboFileOption);
 		}
 
 		try {
@@ -103,26 +104,27 @@ int main(int argc, char *argv[]) {
 				auto offset = entry->get_data_offset();
 
 				if (size > 0) {
-					auto outfilename = entry->get_path().string();
+					auto outfilename = entry->get_path();
 					if (outfilename != sqmFileName) {
 						continue;
 					}
 
 					foundMission = true;
-					missionBinaryData = QByteArray(size, '\0');
-
-					std::ifstream input(inputFilename.toStdString(), std::ios_base::binary);
-					input.seekg(offset);
-					input.read(missionBinaryData.data(), size);
+					QFile input(inputFilename);
+					if (!input.open(QFile::ReadOnly)) {
+						LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Could not open '" << inputFilename.toStdString() << "' for reading, is the archive still there?");
+					}
+					input.skip(offset);
+					missionBinaryData = input.readAll();
 					input.close();
 
-					std::cout << "Loaded '" << sqmFileName << "' (" << size << " Bytes) from PBO." << std::endl;
+					std::cout << "Loaded '" << sqmFileName.toStdString() << "' (" << size << " Bytes) from PBO." << std::endl;
 					break;
 				}
 			}
 
 			if (!foundMission) {
-				std::cerr << "Could not locate '" << sqmFileName << "' in PBO, is the archive complete?" << std::endl;
+				std::cerr << "Could not locate '" << sqmFileName.toStdString() << "' in PBO, is the archive complete?" << std::endl;
 				return EXIT_FAILURE;
 			}
 		} catch (std::exception const& e) {
@@ -132,7 +134,7 @@ int main(int argc, char *argv[]) {
 	} else {
 		QFile inputFile(inputFilename);
 		if (!inputFile.open(QFile::ReadOnly)) {
-			std::cerr << "Failed to open input file '" << sqmFileName << "'. Terminating..." << std::endl;
+			std::cerr << "Failed to open input file '" << sqmFileName.toStdString() << "'. Terminating..." << std::endl;
 			return EXIT_FAILURE;
 		}
 
@@ -159,9 +161,9 @@ int main(int argc, char *argv[]) {
 		if (pboSqm.open(QFile::WriteOnly)) {
 			pboSqm.write(missionBinaryData);
 			pboSqm.close();
-			std::cout << "Saved '" << sqmFileName << "' from PBO to '" << parser.value(extractFromPboOption).toStdString() << "' (untouched)." << std::endl;
+			std::cout << "Saved '" << sqmFileName.toStdString() << "' from PBO to '" << parser.value(extractFromPboOption).toStdString() << "' (untouched)." << std::endl;
 		} else {
-			std::cout << "Failed to save '" << sqmFileName << "' from PBO to '" << parser.value(extractFromPboOption).toStdString() << "', is it writable?" << std::endl;
+			std::cout << "Failed to save '" << sqmFileName.toStdString() << "' from PBO to '" << parser.value(extractFromPboOption).toStdString() << "', is it writable?" << std::endl;
 			return EXIT_FAILURE;
 		}
 	}

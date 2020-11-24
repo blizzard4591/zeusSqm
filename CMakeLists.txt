@@ -45,8 +45,6 @@ endif()
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 
-find_package(OpenSSL REQUIRED)
-
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /MP")
 
@@ -181,9 +179,6 @@ set(LIBPBO_SRCS
 )
 
 # Add the executables
-add_library(libpbo STATIC ${LIBPBO_SRCS})
-set_target_properties(libpbo PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
-
 add_library(zeusSqmShared STATIC ${ZEUSSQM_SHARED_HEADERS} ${ZEUSSQM_SHARED_SOURCES_CPP})
 
 add_executable(zeusSqm ${ZEUSSQM_HEADERS} ${ZEUSSQM_SOURCES_CPP} "${PROJECT_BINARY_DIR}/include/version.cpp")
@@ -193,7 +188,6 @@ add_executable(zeusSqmCollectMods ${ZEUSSQM_COLLECTMODS_HEADERS} ${ZEUSSQM_COLLE
 add_executable(zeusSqmVersionInfo ${ZEUSSQM_BUILDTOOLS_VERSIONINFO_HEADERS} ${ZEUSSQM_BUILDTOOLS_VERSIONINFO_SOURCES_CPP} "${PROJECT_BINARY_DIR}/include/version.cpp")
 
 target_include_directories(zeusSqm PRIVATE "${PROJECT_SOURCE_DIR}/src")
-target_include_directories(libpbo PRIVATE "${LIBPBO_BASEDIR}/include/libpbo")
 
 if (MSVC)
 #	set_target_properties(zeusSqm PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\"")
@@ -206,13 +200,9 @@ endif(MSVC)
 target_link_libraries(zeusSqmShared Qt5::Core)
 target_link_libraries(zeusSqmShared Qt5::Gui)
 
-target_link_libraries(zeusSqm libpbo)
 target_link_libraries(zeusSqm zeusSqmShared)
 
-target_link_libraries(zeusSqmCollectMods libpbo)
 target_link_libraries(zeusSqmCollectMods zeusSqmShared)
-
-target_link_libraries(libpbo OpenSSL::Crypto)
 
 target_link_libraries(zeusSqmVersionInfo Qt5::Core)
 
