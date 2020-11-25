@@ -14,7 +14,8 @@
 
 #define SHA_DIGEST_LENGTH QCryptographicHash::hashLength(QCryptographicHash::Sha1)
 
-#define DEBUG_TIMERS 1
+//#define DEBUG_TIMERS 1
+#define DEBUG_SAVE_FILES_AROUND_COMPRESSION
 
 #ifdef DEBUG_TIMERS
 #include <chrono>
@@ -25,7 +26,7 @@ namespace PBO {
 		open(file_path);
 	}
 
-	PBO::PBO(bool signed_file) : std::vector<std::shared_ptr<Entry>>(), m_hash_context(QCryptographicHash::Sha1), m_file() {
+	PBO::PBO(bool signed_file) : std::vector<std::shared_ptr<Entry>>(), m_hash_context(QCryptographicHash::Sha1), m_file(), m_skip_hash_check(true) {
 		m_signed = signed_file;
 	}
 
@@ -152,6 +153,16 @@ namespace PBO {
 
 		while (result.size() < original_size) {
 			if (position >= data.size()) {
+#ifdef DEBUG_SAVE_FILES_AROUND_COMPRESSION
+				QFile out("entry_orig.bin");
+				out.open(QFile::WriteOnly);
+				out.write(data);
+				out.close();
+				out.setFileName("entry_uncom.bin");
+				out.open(QFile::WriteOnly);
+				out.write(result);
+				out.close();
+#endif
 				throw zeusops::exceptions::FormatErrorException() << "Input data too short, expected another byte!";
 			}
 
@@ -170,24 +181,24 @@ namespace PBO {
 					throw zeusops::exceptions::FormatErrorException() << "Input data too short, expected another two bytes!";
 				}
 
-				uint16_t const B2B1 = (data.at(position + 1) << 8) | data.at(position);
-				int const rpos = result.size() - ((B2B1 & 0x00FFu) | (B2B1 & 0xF000u) >> 4);
-				int const rlen = (B2B1 & 0x0F00u >> 8) + 3;
+				uint16_t const B2B1 = (((uint8_t)data.at(position + 1)) << 8) | ((uint8_t)data.at(position));
+				int const rpos = result.size() - ((B2B1 & 0x00FFu) | ((B2B1 & 0xF000u) >> 4));
+				int const rlen = ((B2B1 & 0x0F00u) >> 8) + 3;
 
-				if ((rpos + rlen) <= result.size()) {
+				if ((rpos >= 0) && ((rpos + rlen) <= result.size())) {
 					// bytes to copy are within the existing reconstructed data
 					for (int i = 0; i < rlen; ++i) {
 						result.append(result.at(rpos + i));
 					}
-				} else if ((rpos + rlen) > result.size()) {
+				} else if ((rpos >= 0) && ((rpos + rlen) > result.size())) {
 					// data to copy exceeds what's available
 					int const cappedRlen = result.size() - rpos;
-					while (result.size() < (rpos + rlen)) {
-						for (int i = 0; (i < cappedRlen) && (result.size() < (rpos + rlen)); ++i) {
+					while ((cappedRlen > 0) && (result.size() <= (rpos + rlen))) {
+						for (int i = 0; (i < cappedRlen) && (result.size() <= (rpos + rlen)); ++i) {
 							result.append(result.at(rpos + i));
 						}
 					}
-				} else if ((rpos + rlen) < 0) {
+				} else if ((rpos < 0) || ((rpos + rlen) < 0)) {
 					// special case
 					for (int i = 0; i < rlen; ++i) {
 						result.append(' ');
@@ -204,7 +215,11 @@ namespace PBO {
 	}
 
 	void PBO::read(uint32_t& value) {
-		read(reinterpret_cast<char*>(&value), sizeof(value));
+		QByteArray const bytes = m_file.read(4);
+		value = *reinterpret_cast<uint32_t const*>(bytes.constData());
+		if (is_signed() && !m_skip_hash_check) {
+			m_hash_context.addData(bytes);
+		}
 	}
 
 	void PBO::read(QString& text) {
@@ -222,7 +237,7 @@ namespace PBO {
 
 		text = QString::fromUtf8(data);
 
-		if (is_signed()) {
+		if (is_signed() && !m_skip_hash_check) {
 			m_hash_context.addData(data);
 		}
 	}
@@ -240,7 +255,7 @@ namespace PBO {
 			}
 		}
 
-		if (is_signed()) {
+		if (is_signed() && !m_skip_hash_check) {
 			m_hash_context.addData(data);
 		}
 		target = data;
@@ -249,7 +264,7 @@ namespace PBO {
 	void PBO::read(char* s, qint64 n) {
 		m_file.read(s, n);
 
-		if (is_signed()) {
+		if (is_signed() && !m_skip_hash_check) {
 			m_hash_context.addData(s, n);
 		}
 	}
@@ -446,7 +461,7 @@ namespace PBO {
 		auto const originalSize = entry.get_original_size();
 		auto const offset = entry.get_data_offset();
 
-		if (originalSize > 0) {
+		if (size > 0) {
 			auto const& outfilename = entry.get_path_as_bytes();
 			QFile input(m_path);
 			if (!input.open(QFile::ReadOnly)) {
@@ -455,12 +470,43 @@ namespace PBO {
 			input.skip(offset);
 			result = input.read(size);
 			input.close();
+#ifdef DEBUG_SAVE_FILES_AROUND_COMPRESSION
+			// Debug
+			QByteArray const debug = result;
+#endif
 
-			if (originalSize != size) {
+			if (entry.get_packing_method() == PackingMethod::Compressed || ((originalSize != 0) && (originalSize != size))) {
 #ifdef DEBUG_TIMERS
 				auto t1B = std::chrono::high_resolution_clock::now();
 #endif
+				QByteArray const fileChecksumData = result.right(4);
+				uint32_t const fileChecksum = *reinterpret_cast<uint32_t const*>(fileChecksumData.constData());
 				result = uncompress(result, originalSize);
+
+				uint32_t checksum = 0;
+				for (int i = 0; i < result.size(); ++i) {
+					checksum += (unsigned char)result.at(i);
+				}
+
+				//static int right = 0;
+				//static int wrong = 0;
+				if (checksum != fileChecksum) {
+					throw zeusops::exceptions::FormatErrorException() << "Failed to properly unpack file: Signature error!";
+					//++wrong;
+#ifdef DEBUG_SAVE_FILES_AROUND_COMPRESSION
+					QFile out(QString(path).replace('/', "") + "_orig.bin");
+					out.open(QFile::WriteOnly);
+					out.write(debug);
+					out.close();
+					out.setFileName(QString(path).replace('/', "") + "_uncom.bin");
+					out.open(QFile::WriteOnly);
+					out.write(result);
+					out.close();
+#endif
+				} else {
+					//++right;
+				}
+
 #ifdef DEBUG_TIMERS
 				auto t2B = std::chrono::high_resolution_clock::now();
 				auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2B - t1B).count();
@@ -469,7 +515,7 @@ namespace PBO {
 			}
 
 			if (!quiet) {
-				std::cout << "Loaded '" << path.toStdString() << "' (" << originalSize << " Bytes) from PBO '" << m_path.toStdString() << "'." << std::endl;
+				std::cout << "Loaded '" << path.toStdString() << "' (" << result.size() << " Bytes) from PBO '" << m_path.toStdString() << "'." << std::endl;
 			}
 		}
 		

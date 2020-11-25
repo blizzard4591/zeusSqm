@@ -45,6 +45,8 @@ namespace PBO {
 		QString m_checksum;
 		QString m_file_checksum;
 
+		bool m_skip_hash_check;
+
 		QMap<QByteArray, std::shared_ptr<Entry>> m_path_to_entry_map;
 
 		QByteArray uncompress(QByteArray const& data, std::size_t const original_size) const;

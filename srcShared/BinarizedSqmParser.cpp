@@ -145,6 +145,9 @@ std::shared_ptr<SqmStructure> BinarizedSqmParser::parseClassEntry(QByteArray con
 	{
 		QString const className = parseString(data, offset);
 		int classOffset = parseUInt32(data, offset);
+		if (classOffset >= data.size()) {
+			LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Invalid class body offset '" << classOffset << "' in class '" << className.toStdString() <<"' et " << offset << "!");
+		}
 		return std::make_shared<SqmClass>(className, parseClassBody(data, classOffset));
 	}
 	case 1:
