@@ -1,5 +1,7 @@
 #include "pbo/Pbo.h"
 
+#include "exceptions/FormatErrorException.h"
+
 #include <QByteArray>
 #include <QFileInfo>
 
@@ -12,6 +14,12 @@
 
 #define SHA_DIGEST_LENGTH QCryptographicHash::hashLength(QCryptographicHash::Sha1)
 
+#define DEBUG_TIMERS 1
+
+#ifdef DEBUG_TIMERS
+#include <chrono>
+#endif
+
 namespace PBO {
 	PBO::PBO(QString const& file_path, bool signed_file) : PBO(signed_file) {
 		open(file_path);
@@ -21,7 +29,7 @@ namespace PBO {
 		m_signed = signed_file;
 	}
 
-	QString const& PBO::get_path() {
+	QString const& PBO::get_path() const {
 		return m_path;
 	}
 
@@ -29,7 +37,7 @@ namespace PBO {
 		m_signed = signed_file;
 	}
 
-	bool PBO::is_signed() {
+	bool PBO::is_signed() const {
 		return m_signed;
 	}
 
@@ -37,7 +45,7 @@ namespace PBO {
 		m_checksum = digest.toHex();
 	}
 
-	QString& PBO::signature() {
+	QString const& PBO::signature() const {
 		return m_checksum;
 	}
 
@@ -45,7 +53,7 @@ namespace PBO {
 		m_file_checksum = digest.toHex();
 	}
 
-	QString& PBO::file_signature() {
+	QString const& PBO::file_signature() const {
 		return m_file_checksum;
 	}
 
@@ -69,7 +77,7 @@ namespace PBO {
 			throw std::logic_error("Path is a directory!");
 	}
 
-	void PBO::read(Entry*& entry) {
+	void PBO::read(std::shared_ptr<Entry> const& entry) {
 		QByteArray entry_path;
 		uint32_t entry_packing_method;
 		uint32_t entry_original_size;
@@ -86,8 +94,6 @@ namespace PBO {
 		read(entry_reserved);
 		read(entry_timestamp);
 		read(entry_data_size);
-
-		entry = new Entry();
 
 		entry->set_path(entry_path);
 		entry->set_packing_method(entry_packing_method);
@@ -123,14 +129,78 @@ namespace PBO {
 			case PackingMethod::Uncompressed:
 				break;
 			case PackingMethod::Compressed:
+				if (entry_original_size == entry_data_size) {
+					std::cerr << "WARNING: Entry is marked as compressed (" << entry_original_size << " vs. " << entry_data_size << "), but its not really compressed?!" << std::endl;
+				}
 				break;
 			case PackingMethod::Encrypted:
-				std::cerr << "WARNING : Encrypted method is unavailable for entry " << entry->get_path().toStdString() << " !" << std::endl;
+				std::cerr << "WARNING: Encrypted method is unavailable for entry " << entry->get_path().toStdString() << " !" << std::endl;
 				break;
 			default:
-				std::cerr << "WARNING : Unsupported packing method (" << entry->get_packing_method() << ") !" << std::endl;
+				std::cerr << "WARNING: Unsupported packing method (" << entry->get_packing_method() << ") !" << std::endl;
 				break;
 		}
+	}
+
+	QByteArray PBO::uncompress(QByteArray const& data, std::size_t const original_size) const {
+		QByteArray result;
+		result.reserve(static_cast<int>(original_size));
+		int position = 0;
+
+		uint8_t formatByte = (uint8_t)data.at(position++);
+		int bitNumber = 0;
+
+		while (result.size() < original_size) {
+			if (position >= data.size()) {
+				throw zeusops::exceptions::FormatErrorException() << "Input data too short, expected another byte!";
+			}
+
+			if (bitNumber >= 8) {
+				formatByte = data.at(position++);
+				bitNumber = 0;
+			}
+			if (formatByte & 0x1) { // Bit is 1: Append Byte directly
+				if (position >= data.size()) {
+					throw zeusops::exceptions::FormatErrorException() << "Input data too short, expected another byte!";
+				}
+				
+				result.append(data.at(position++));
+			} else { // Bit is 0: Two-Byte Pointer to past data
+				if ((position + 1) >= data.size()) {
+					throw zeusops::exceptions::FormatErrorException() << "Input data too short, expected another two bytes!";
+				}
+
+				uint16_t const B2B1 = (data.at(position + 1) << 8) | data.at(position);
+				int const rpos = result.size() - ((B2B1 & 0x00FFu) | (B2B1 & 0xF000u) >> 4);
+				int const rlen = (B2B1 & 0x0F00u >> 8) + 3;
+
+				if ((rpos + rlen) <= result.size()) {
+					// bytes to copy are within the existing reconstructed data
+					for (int i = 0; i < rlen; ++i) {
+						result.append(result.at(rpos + i));
+					}
+				} else if ((rpos + rlen) > result.size()) {
+					// data to copy exceeds what's available
+					int const cappedRlen = result.size() - rpos;
+					while (result.size() < (rpos + rlen)) {
+						for (int i = 0; (i < cappedRlen) && (result.size() < (rpos + rlen)); ++i) {
+							result.append(result.at(rpos + i));
+						}
+					}
+				} else if ((rpos + rlen) < 0) {
+					// special case
+					for (int i = 0; i < rlen; ++i) {
+						result.append(' ');
+					}
+				}
+				position += 2;
+			}
+
+			formatByte >>= 1;
+			++bitNumber;
+		}
+
+		return result;
 	}
 
 	void PBO::read(uint32_t& value) {
@@ -288,27 +358,26 @@ namespace PBO {
 	}
 
 	void PBO::unpack() {
+#ifdef DEBUG_TIMERS
+		auto t1 = std::chrono::high_resolution_clock::now();
+#endif
 		m_file.setFileName(m_path);
 		if (!m_file.open(QFile::ReadOnly))
 			throw std::logic_error("Failed to open input file for reading!");
 
 		qint64 const file_size = m_file.size();
-		
-		Entry* entry = nullptr;
 		while (!m_file.atEnd()) {
 			if ((m_file.pos() + HEADER_ENTRY_DEFAULT_SIZE) > file_size)
 				throw std::logic_error("Header entry is too small");
 
+			std::shared_ptr<Entry> const entry = std::make_shared<Entry>();
 			read(entry);
 			if (entry->is_zero_entry()) {
-				delete entry;
 				break;
 			}
 
-			std::shared_ptr<Entry> const ptr_entry = std::make_shared<Entry>(*entry);
-			m_path_to_entry_map.insert(entry->get_path_as_bytes(), ptr_entry);
-			push_back(ptr_entry);
-			delete entry;
+			m_path_to_entry_map.insert(entry->get_path_as_bytes(), entry);
+			push_back(entry);
 
 			if (m_file.atEnd())
 				throw std::logic_error("No zero entry found");
@@ -351,6 +420,11 @@ namespace PBO {
 		if (data_offset > file_size) {
 			throw std::logic_error("Is too small");
 		}
+#ifdef DEBUG_TIMERS
+		auto t2 = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+		std::cout << "Unpacking PBO took " << duration << "ms." << std::endl;
+#endif
 	}
 
 	bool PBO::has_file(QByteArray const& path) const {
@@ -359,6 +433,53 @@ namespace PBO {
 
 	Entry const& PBO::get_file(QByteArray const& path) const {
 		return **m_path_to_entry_map.constFind(path);
+	}
+
+	QByteArray PBO::read_file(QByteArray const& path, bool quiet) const {
+#ifdef DEBUG_TIMERS
+		auto t1 = std::chrono::high_resolution_clock::now();
+#endif
+		QByteArray result;
+		Entry const& entry = get_file(path);
+
+		auto const size = entry.get_data_size();
+		auto const originalSize = entry.get_original_size();
+		auto const offset = entry.get_data_offset();
+
+		if (originalSize > 0) {
+			auto const& outfilename = entry.get_path_as_bytes();
+			QFile input(m_path);
+			if (!input.open(QFile::ReadOnly)) {
+				throw zeusops::exceptions::FormatErrorException() << "Failed to open input PBO archive for entry extraction, is the file still there?";
+			}
+			input.skip(offset);
+			result = input.read(size);
+			input.close();
+
+			if (originalSize != size) {
+#ifdef DEBUG_TIMERS
+				auto t1B = std::chrono::high_resolution_clock::now();
+#endif
+				result = uncompress(result, originalSize);
+#ifdef DEBUG_TIMERS
+				auto t2B = std::chrono::high_resolution_clock::now();
+				auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2B - t1B).count();
+				std::cout << "Uncompressing file took " << duration << "ms." << std::endl;
+#endif
+			}
+
+			if (!quiet) {
+				std::cout << "Loaded '" << path.toStdString() << "' (" << originalSize << " Bytes) from PBO '" << m_path.toStdString() << "'." << std::endl;
+			}
+		}
+		
+#ifdef DEBUG_TIMERS
+		auto t2 = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+		std::cout << "Getting file from PBO took " << duration << "ms." << std::endl;
+#endif
+
+		return result;
 	}
 
 	PBO::~PBO() {

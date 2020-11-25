@@ -37,26 +37,7 @@ bool pboHasFile(PBO::PBO& pbo, QByteArray const& filename) {
 }
 
 QByteArray loadFileFromPbo(QString const& pboFileName, PBO::PBO& pbo, QByteArray const& filename) {
-	auto const& entry = pbo.get_file(filename);
-
-	auto size = entry.get_data_size();
-	auto offset = entry.get_data_offset();
-
-	if (size > 0) {
-		auto const& outfilename = entry.get_path_as_bytes();
-		QFile input(pboFileName);
-		if (!input.open(QFile::ReadOnly)) {
-			LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Could not open '" << pboFileName.toStdString() << "' for reading, is the archive still there?");
-		}
-		input.skip(offset);
-		QByteArray const fileData = input.read(size);
-		input.close();
-
-		std::cout << "Loaded '" << filename.toStdString() << "' (" << size << " Bytes) from PBO '" << pboFileName.toStdString() << "'." << std::endl;
-		return fileData;
-	}
-
-	LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Could not locate '" << filename.toStdString() << "' in PBO '" << pboFileName.toStdString() << "', is the archive complete?");
+	return pbo.read_file(filename);
 }
 
 QByteArray loadConfigFromPbo(QString const& pboFileName) {
@@ -69,10 +50,10 @@ QByteArray loadConfigFromPbo(QString const& pboFileName) {
 		if (pboHasFile(pbo_file, searchFileNameBin)) {
 			QByteArray const configBin = loadFileFromPbo(pboFileName, pbo_file, searchFileNameBin);
 
-			QFile debugOut(QString("debug_%1_config.bin").arg(QFileInfo(pboFileName).baseName()));
+			/*QFile debugOut(QString("debug_%1_config.bin").arg(QFileInfo(pboFileName).baseName()));
 			debugOut.open(QFile::WriteOnly);
 			debugOut.write(configBin);
-			debugOut.close();
+			debugOut.close();*/
 
 			return configBin;
 		} else if (pboHasFile(pbo_file, searchFileNameTxt)) {
@@ -107,10 +88,10 @@ QByteArray loadConfigFromPbo(QString const& pboFileName) {
 				pos = configCpp.indexOf(includeBytes, startOffset);
 			}
 
-			QFile debugOut(QString("debug_%1_config.txt").arg(QFileInfo(pboFileName).baseName()));
+			/*QFile debugOut(QString("debug_%1_config.txt").arg(QFileInfo(pboFileName).baseName()));
 			debugOut.open(QFile::WriteOnly);
 			debugOut.write(configCpp);
-			debugOut.close();
+			debugOut.close();*/
 
 			return configCpp;
 		} else {

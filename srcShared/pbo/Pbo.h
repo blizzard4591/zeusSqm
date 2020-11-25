@@ -24,15 +24,16 @@ namespace PBO {
 		PBO(bool signed_file = true);
 		virtual ~PBO();
 
-		QString const& get_path();
+		QString const& get_path() const;
 		void signed_file(bool signed_file);
-		bool is_signed();
-		QString& signature();
-		QString& file_signature();
+		bool is_signed()  const;
+		QString const& signature() const;
+		QString const& file_signature()  const;
 		void open(QString const& file_path);
 
 		bool has_file(QByteArray const& path) const;
 		Entry const& get_file(QByteArray const& path) const;
+		QByteArray read_file(QByteArray const& path, bool quiet = false) const;
 
 		void pack();
 		void unpack();
@@ -46,7 +47,8 @@ namespace PBO {
 
 		QMap<QByteArray, std::shared_ptr<Entry>> m_path_to_entry_map;
 
-		void read(Entry*& entry);
+		QByteArray uncompress(QByteArray const& data, std::size_t const original_size) const;
+		void read(std::shared_ptr<Entry> const& entry);
 		void read(uint32_t& value);
 		void read(QString& text);
 		void read(QByteArray& data);
