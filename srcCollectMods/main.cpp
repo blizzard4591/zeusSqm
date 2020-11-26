@@ -130,12 +130,13 @@ int main(int argc, char *argv[]) {
 	parser.addHelpOption();
 	parser.addVersionOption();
 	parser.addPositionalArgument("targetFolder", QCoreApplication::translate("main", "Folder to search in for PBOs."));
+	parser.addPositionalArgument("outputFile", QCoreApplication::translate("main", "File to write the mod names to."));
 
 	// Process the actual command line arguments given by the user
 	parser.process(app);
 
 	QStringList args = parser.positionalArguments();
-	if (args.isEmpty()) {
+	if (args.size() < 2) {
 		parser.showHelp(EXIT_FAILURE);
 	}
 
@@ -167,6 +168,14 @@ int main(int argc, char *argv[]) {
 	auto const t2 = std::chrono::high_resolution_clock::now();
 	auto const duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 	std::cout << "Found a total of " << modNames.size() << " mods (successfully parsed " << successCount << " PBOs in " << duration << "ms, failed on " << errorCount << ")." << std::endl;
+
+	QFile output(args.at(1));
+	if (!output.open(QFile::WriteOnly | QIODevice::Text)) {
+		std::cerr << "Failed to open given output file '" << args.at(1).toStdString() << "'! Can not write list." << std::endl;
+		return 1;
+	}
+	output.write(modNames.join('\n').toUtf8());
+	output.close();
 
 	std::cout << "Bye bye!" << std::endl;
     return 0;
