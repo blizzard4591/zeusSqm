@@ -26,8 +26,12 @@ namespace PBO {
 		open(file_path);
 	}
 
-	PBO::PBO(bool signed_file) : std::vector<std::shared_ptr<Entry>>(), m_hash_context(QCryptographicHash::Sha1), m_file(), m_skip_hash_check(true) {
+	PBO::PBO(bool signed_file) : std::vector<std::shared_ptr<Entry>>(), m_hash_context(QCryptographicHash::Sha1), m_file(), m_skip_hash_check(false) {
 		m_signed = signed_file;
+	}
+
+	void PBO::set_skip_hash_check(bool skip_hash_check) {
+		m_skip_hash_check = skip_hash_check;
 	}
 
 	QString const& PBO::get_path() const {

@@ -40,6 +40,8 @@ namespace PBO {
 
 		void pack();
 		void unpack();
+
+		void set_skip_hash_check(bool skip_hash_check);
 	private:
 		QCryptographicHash m_hash_context;
 		QString m_path;
@@ -47,7 +49,6 @@ namespace PBO {
 		QFile m_file;
 		QString m_checksum;
 		QString m_file_checksum;
-
 		bool m_skip_hash_check;
 
 		QMap<QByteArray, std::shared_ptr<Entry>> m_path_to_entry_map;

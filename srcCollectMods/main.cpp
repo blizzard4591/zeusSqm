@@ -149,6 +149,7 @@ int main(int argc, char *argv[]) {
 
 	std::size_t errorCount = 0;
 	std::size_t successCount = 0;
+	auto const t1 = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < pboFiles.size(); ++i) {
 		try {
 			QStringList const subModNames = extractModNamesFromPbo(pboFiles.at(i));
@@ -163,7 +164,9 @@ int main(int argc, char *argv[]) {
 			std::cerr << "Ignoring file '" << pboFiles.at(i).toStdString() << "' due to parsing exception: " << e.what() << std::endl;
 		}
 	}
-	std::cout << "Found a total of " << modNames.size() << " mods (successfully parsed " << successCount << " PBOs, failed on " << errorCount << ")." << std::endl;
+	auto const t2 = std::chrono::high_resolution_clock::now();
+	auto const duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+	std::cout << "Found a total of " << modNames.size() << " mods (successfully parsed " << successCount << " PBOs in " << duration << "ms, failed on " << errorCount << ")." << std::endl;
 
 	std::cout << "Bye bye!" << std::endl;
     return 0;
