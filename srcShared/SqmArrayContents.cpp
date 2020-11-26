@@ -38,7 +38,7 @@ std::vector<SqmArrayContents::ArrayEntry> const& SqmArrayContents::getValues() c
 
 bool SqmArrayContents::shoudBeMultiLine() const {
 	bool isPure = true;
-	for (int i = 0; i < m_values.size(); ++i) {
+	for (std::size_t i = 0; i < m_values.size(); ++i) {
 		if (m_values.at(i).type == ArrayEntryType::STRING) {
 			isPure = false;
 			break;
@@ -55,7 +55,7 @@ bool SqmArrayContents::shoudBeMultiLine() const {
 void SqmArrayContents::toSqmStageOne(QByteArray& output) const {
 	// Entry Count
 	BinarizedSqm::writeCompressedInteger(output, m_values.size());
-	for (int i = 0; i < m_values.size(); ++i) {
+	for (std::size_t i = 0; i < m_values.size(); ++i) {
 		switch (m_values.at(i).type) {
 		case ArrayEntryType::STRING:
 			BinarizedSqm::writeUint8(output, 0);
@@ -86,7 +86,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline, SqmStru
 	if (isMultiline) {
 		QString result;
 		result.append(indentString).append(QStringLiteral("{\r\n"));
-		for (int i = 0; i < m_values.size(); ++i) {
+		for (std::size_t i = 0; i < m_values.size(); ++i) {
 			switch (m_values.at(i).type) {
 			case ArrayEntryType::FLOAT:
 			{
@@ -129,7 +129,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline, SqmStru
 		return result;
 	} else {
 		QString result = QStringLiteral("{");
-		for (int i = 0; i < m_values.size(); ++i) {
+		for (std::size_t i = 0; i < m_values.size(); ++i) {
 			switch (m_values.at(i).type) {
 			case ArrayEntryType::FLOAT:
 			{
@@ -169,7 +169,7 @@ QString SqmArrayContents::toSqm(int indentationLevel, bool& isMultiline, SqmStru
 }
 
 float SqmArrayContents::getEntryAsFloat(int index) const {
-	if ((index < 0) || (index >= m_values.size())) {
+	if ((index < 0) || (static_cast<std::size_t>(index) >= m_values.size())) {
 		throw;
 	}
 

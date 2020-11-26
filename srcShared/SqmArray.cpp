@@ -60,7 +60,7 @@ std::shared_ptr<SqmStructure> SqmArray::rename(QString const& newName) const {
 }
 
 SqmArray SqmArray::setEntry(int index, float value) const {
-	if ((index < 0) || (index >= getValues().size())) {
+	if ((index < 0) || (static_cast<std::size_t>(index) >= getValues().size())) {
 		throw;
 	}
 

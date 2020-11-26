@@ -378,7 +378,7 @@ std::vector<std::shared_ptr<T>> SqmObjectList<T>::remove(SqmStructure const& old
 			std::shared_ptr<SqmClass> const replacedSqmClass = sqmClass->remove(old, sqmClass);
 			std::shared_ptr<T> const downcastedReplaced = std::dynamic_pointer_cast<T>(replacedSqmClass);
 			objects.push_back(downcastedReplaced);
-			if (*sqmClass != *downcastedReplaced) {
+			if (!(*sqmClass == *downcastedReplaced)) {
 				didChange = true;
 			}
 		} else {
