@@ -45,7 +45,13 @@ endif()
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 
-if(MSVC)
+if(CMAKE_COMPILER_IS_GNUCC)
+	# Set standard flags for GCC
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -pedantic")
+	set(CMAKE_CXX_STANDARD 17)
+	set(CMAKE_CXX_STANDARD_REQUIRED ON)
+elseif(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /MP")
 
 	add_definitions(/DNOMINMAX)

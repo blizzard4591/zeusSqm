@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <variant>
+#include <vector>
 
 #include <QByteArray>
 #include <QString>
