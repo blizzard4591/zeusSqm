@@ -1,6 +1,7 @@
 #include "MarkerCheckModule.h"
 
 #include <iostream>
+#include <cmath>
 
 #include "SqmArray.h"
 #include "SqmClass.h"
