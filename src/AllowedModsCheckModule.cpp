@@ -4,6 +4,8 @@
 #include <QFile>
 #include <QTextStream>
 
+#include <QtGlobal>
+
 #include "SqmArray.h"
 #include "SqmHandling.h"
 #include "exceptions/FormatErrorException.h"
@@ -38,9 +40,17 @@ bool AllowedModsCheckModule::checkArguments(QCommandLineParser& parser) {
 		bool const isSimpleNewline = whitelist.count("\r\n") == 0;
 		QStringList modList;
 		if (isSimpleNewline) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+			modList = whitelist.split('\n', QString::SkipEmptyParts);
+#else
 			modList = whitelist.split('\n', Qt::SplitBehaviorFlags::SkipEmptyParts);
+#endif
 		} else {
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+			modList = whitelist.split("\r\n", QString::SkipEmptyParts);
+#else
 			modList = whitelist.split("\r\n", Qt::SplitBehaviorFlags::SkipEmptyParts);
+#endif
 		}
 
 		for (int i = 0; i < modList.size(); ++i) {

@@ -161,7 +161,7 @@ namespace PBO {
 		uint8_t formatByte = (uint8_t)data.at(position++);
 		int bitNumber = 0;
 
-		while (result.size() < original_size) {
+		while (static_cast<std::size_t>(result.size()) < original_size) {
 			if (position >= data.size()) {
 #ifdef DEBUG_SAVE_FILES_AROUND_COMPRESSION
 				QFile out("entry_orig.bin");
