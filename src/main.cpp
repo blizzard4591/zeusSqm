@@ -17,7 +17,7 @@
 #include "TextualSqmParser.h"
 #include "exceptions/FormatErrorException.h"
 
-#include "pbo/pbo.h"
+#include "pbo/Pbo.h"
 
 #include "version.h"
 

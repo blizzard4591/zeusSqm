@@ -5,7 +5,7 @@
 
 #include <QtEndian>
 
-#include "Version.h"
+#include "version.h"
 
 int main(int argc, char *argv[]) {
 	std::cout << "zeusUtilities_" << Version::versionMajor << "." << Version::versionMinor << "." << Version::versionPatch;

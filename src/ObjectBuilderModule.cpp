@@ -109,9 +109,9 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 				QRgb const rgb = image.pixel(iw, ih);
 				
 				int a = qAlpha(rgb);
-				int r = qRed(rgb);
-				int g = qGreen(rgb);
-				int b = qBlue(rgb);
+				//int r = qRed(rgb);
+				//int g = qGreen(rgb);
+				//int b = qBlue(rgb);
 
 				if (a > minAlphaValue) {
 					std::cout << " X";
