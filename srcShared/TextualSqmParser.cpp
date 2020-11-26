@@ -7,6 +7,7 @@
 #include <QTextStream>
 
 #include "SqmArrayWithFlags.h"
+#include "SqmInt64Property.h"
 #include "exceptions/FormatErrorException.h"
 
 
@@ -351,11 +352,15 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 						objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
 					} else {
 						bool ok = false;
-						int const i = value.toInt(&ok);
-						
+						int const i = value.toInt(&ok);						
 						if (!ok) {
-							// Fall back to float for big numbers
-							objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
+							// Try Int64
+							qint64 const iL = value.toLongLong(&ok);
+							if (!ok) {
+								// Fall back to float for big numbers
+								objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
+							}
+							objects.push_back(std::make_shared<SqmInt64Property>(name, iL));
 						} else {
 							objects.push_back(std::make_shared<SqmIntProperty>(name, i));
 						}
@@ -435,5 +440,5 @@ void TextualSqmParser::failureReport(QString msg, QString const& file, int offse
 	msg = msg.replace(QStringLiteral("LINE"), QString::number(line));
 	msg = msg.replace(QStringLiteral("OFFSET"), QString::number(offset));
 
-	LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Failed to parse SQM: " << msg.toStdString());
+	throw zeusops::exceptions::FormatErrorException() << "Failed to parse SQM: " << msg.toStdString();
 }

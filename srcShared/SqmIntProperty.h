@@ -18,6 +18,7 @@ public:
 
 	virtual QString const& getValueAsString() const override;
 	virtual qint32 getValueAsInt() const override;
+	virtual qint64 getValueAsInt64() const override;
 	virtual float getValueAsFloat() const override;
 
 	std::shared_ptr<SqmIntProperty> increment(int incrementBy, int* oldValue = nullptr) const;

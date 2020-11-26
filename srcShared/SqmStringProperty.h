@@ -18,6 +18,7 @@ public:
 
 	virtual QString const& getValueAsString() const override;
 	virtual qint32 getValueAsInt() const override;
+	virtual qint64 getValueAsInt64() const override;
 	virtual float getValueAsFloat() const override;
 
 	virtual void toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;

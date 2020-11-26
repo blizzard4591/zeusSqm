@@ -31,6 +31,10 @@ qint32 SqmFloatProperty::getValueAsInt() const {
 	return m_value;
 }
 
+qint64 SqmFloatProperty::getValueAsInt64() const {
+	return m_value;
+}
+
 float SqmFloatProperty::getValueAsFloat() const {
 	return m_value;
 }

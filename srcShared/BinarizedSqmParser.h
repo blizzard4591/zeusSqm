@@ -26,6 +26,8 @@ private:
 	static float parseFloat(QByteArray const& data, int& offset);
 	static qint32 parseInt32(QByteArray const& data, int& offset);
 	static quint32 parseUInt32(QByteArray const& data, int& offset);
+	static qint64 parseInt64(QByteArray const& data, int& offset);
+	static quint64 parseUInt64(QByteArray const& data, int& offset);
 	static quint8 parseUint8(QByteArray const& data, int& offset);
 	static QString parseString(QByteArray const& data, int& offset);
 

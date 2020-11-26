@@ -32,8 +32,11 @@ namespace PBO {
 		void open(QString const& file_path);
 
 		bool has_file(QByteArray const& path) const;
+		bool has_file_ignore_case(QByteArray const& path) const;
 		Entry const& get_file(QByteArray const& path) const;
+		Entry const& get_file_ignore_case(QByteArray const& path) const;
 		QByteArray read_file(QByteArray const& path, bool quiet = false) const;
+		QByteArray read_file_ignore_case(QByteArray const& path, bool quiet = false) const;
 
 		void pack();
 		void unpack();
@@ -48,6 +51,7 @@ namespace PBO {
 		bool m_skip_hash_check;
 
 		QMap<QByteArray, std::shared_ptr<Entry>> m_path_to_entry_map;
+		QMap<QString, std::shared_ptr<Entry>> m_path_to_lowerCaseEntry_map;
 
 		QByteArray uncompress(QByteArray const& data, std::size_t const original_size) const;
 		void read(std::shared_ptr<Entry> const& entry);

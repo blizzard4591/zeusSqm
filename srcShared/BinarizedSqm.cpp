@@ -21,6 +21,19 @@ int BinarizedSqm::writeUint32(QByteArray& output, quint32 u) {
 	return output.size() - 4;
 }
 
+void BinarizedSqm::writeInt64(QByteArray& output, qint64 i) {
+	QByteArray bytes(8, '\0');
+	*reinterpret_cast<qint64*>(bytes.data()) = i;
+	output.append(bytes);
+}
+
+int BinarizedSqm::writeUint64(QByteArray& output, quint64 u) {
+	QByteArray bytes(8, '\0');
+	*reinterpret_cast<quint64*>(bytes.data()) = u;
+	output.append(bytes);
+	return output.size() - 8;
+}
+
 void BinarizedSqm::writeUint8(QByteArray& output, quint8 u) {
 	QByteArray bytes(1, '\0');
 	*reinterpret_cast<quint8*>(bytes.data()) = u;

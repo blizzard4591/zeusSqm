@@ -33,75 +33,59 @@ QStringList scanDirectoryForPbos(QString const& dirName) {
 }
 
 bool pboHasFile(PBO::PBO& pbo, QByteArray const& filename) {
-	return pbo.has_file(filename);
+	return pbo.has_file_ignore_case(filename);
 }
 
 QByteArray loadFileFromPbo(QString const& pboFileName, PBO::PBO& pbo, QByteArray const& filename) {
-	return pbo.read_file(filename);
+	return pbo.read_file_ignore_case(filename, true);
 }
 
 QByteArray loadConfigFromPbo(QString const& pboFileName) {
 	static QByteArray const searchFileNameBin = QStringLiteral("config.bin").toUtf8();
 	static QByteArray const searchFileNameTxt = QStringLiteral("config.cpp").toUtf8();
 	PBO::PBO pbo_file(pboFileName);
-	try {
-		pbo_file.unpack();
 
-		if (pboHasFile(pbo_file, searchFileNameBin)) {
-			QByteArray const configBin = loadFileFromPbo(pboFileName, pbo_file, searchFileNameBin);
+	pbo_file.unpack();
 
-			/*QFile debugOut(QString("debug_%1_config.bin").arg(QFileInfo(pboFileName).baseName()));
-			debugOut.open(QFile::WriteOnly);
-			debugOut.write(configBin);
-			debugOut.close();*/
+	if (pboHasFile(pbo_file, searchFileNameBin)) {
+		QByteArray const configBin = loadFileFromPbo(pboFileName, pbo_file, searchFileNameBin);
+		return configBin;
+	} else if (pboHasFile(pbo_file, searchFileNameTxt)) {
+		QByteArray configCpp = loadFileFromPbo(pboFileName, pbo_file, searchFileNameTxt);	
+		static const QByteArray includeBytes = QStringLiteral("#include \"").toUtf8();
 
-			return configBin;
-		} else if (pboHasFile(pbo_file, searchFileNameTxt)) {
-			QByteArray configCpp = loadFileFromPbo(pboFileName, pbo_file, searchFileNameTxt);	
-			static const QByteArray includeBytes = QStringLiteral("#include \"").toUtf8();
-
-			int startOffset = 0;
-			int pos = configCpp.indexOf(includeBytes, startOffset);
-			while (pos != -1) {
-				int const startPos = pos;
-				// move to first "
-				pos = configCpp.indexOf('"', pos);
-				int posOfClosingQuote = pos + 1;
-				while ((posOfClosingQuote < configCpp.size()) && (configCpp.at(posOfClosingQuote) != '"')) {
-					++posOfClosingQuote;
-				}
-				if (posOfClosingQuote >= configCpp.size()) {
-					LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Could not locate end of #include section in 'config.cpp' in PBO '" << pboFileName.toStdString() << "', is the archive complete?");
-				}
-
-				QByteArray const matched = configCpp.mid(pos + 1, posOfClosingQuote - pos - 1);
-				std::cout << "Found include for '" << matched.toStdString() << "' (" << QString(matched.toHex()).toStdString() << "), following... " << std::endl;
-				if (pboHasFile(pbo_file, matched)) {
-					QByteArray const includeData = loadFileFromPbo(pboFileName, pbo_file, matched);
-					configCpp.replace(startPos, posOfClosingQuote - startPos + 1, includeData);
-					startOffset = 0;
-				} else {
-					std::cerr << "Warning: Could not resolve include '" << matched.toStdString() << "', ignoring!" << std::endl;
-					startOffset = pos + 1;
-				}
-
-				pos = configCpp.indexOf(includeBytes, startOffset);
+		int startOffset = 0;
+		int pos = configCpp.indexOf(includeBytes, startOffset);
+		while (pos != -1) {
+			int const startPos = pos;
+			// move to first "
+			pos = configCpp.indexOf('"', pos);
+			int posOfClosingQuote = pos + 1;
+			while ((posOfClosingQuote < configCpp.size()) && (configCpp.at(posOfClosingQuote) != '"')) {
+				++posOfClosingQuote;
+			}
+			if (posOfClosingQuote >= configCpp.size()) {
+				throw zeusops::exceptions::FormatErrorException() << "Could not locate end of #include section in 'config.cpp' in PBO '" << pboFileName.toStdString() << "', is the archive complete?";
 			}
 
-			/*QFile debugOut(QString("debug_%1_config.txt").arg(QFileInfo(pboFileName).baseName()));
-			debugOut.open(QFile::WriteOnly);
-			debugOut.write(configCpp);
-			debugOut.close();*/
+			QByteArray const matched = configCpp.mid(pos + 1, posOfClosingQuote - pos - 1);
+			std::cout << "Found include for '" << matched.toStdString() << "' (" << QString(matched.toHex()).toStdString() << "), following... " << std::endl;
+			if (pboHasFile(pbo_file, matched)) {
+				QByteArray const includeData = loadFileFromPbo(pboFileName, pbo_file, matched);
+				configCpp.replace(startPos, posOfClosingQuote - startPos + 1, includeData);
+				startOffset = 0;
+			} else {
+				std::cerr << "Warning: Could not resolve include '" << matched.toStdString() << "', ignoring!" << std::endl;
+				startOffset = pos + 1;
+			}
 
-			return configCpp;
-		} else {
-			LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Could not locate '" << searchFileNameBin.toStdString() << "' or '" << searchFileNameTxt.toStdString() << "' in PBO '" << pboFileName.toStdString() << "', is the archive complete?");
+			pos = configCpp.indexOf(includeBytes, startOffset);
 		}
-	} catch (std::exception const& e) {
-		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "pbounpack : " << e.what());
-	}
 
-	return QByteArray();
+		return configCpp;
+	} else {
+		throw zeusops::exceptions::FormatErrorException() << "Could not locate '" << searchFileNameBin.toStdString() << "' or '" << searchFileNameTxt.toStdString() << "' in PBO '" << pboFileName.toStdString() << "', is the archive complete?";
+	}
 }
 
 QStringList extractModNamesFromPbo(QString const& pboFileName) {
@@ -121,11 +105,12 @@ QStringList extractModNamesFromPbo(QString const& pboFileName) {
 		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
 	}
 
-	if (!sqmObjects->hasClass(QStringLiteral("CfgPatches"))) {
-		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Failed to parse file '" << pboFileName.toStdString() << "', class 'CfgPatches' could not be found!");
+	bool const hasCfgPatches = sqmObjects->hasClassIgnoreCase(QStringLiteral("CfgPatches"));
+	if (!hasCfgPatches) {
+		throw zeusops::exceptions::FormatErrorException() << "Failed to parse file '" << pboFileName.toStdString() << "', class 'CfgPatches' could not be found!";
 	}
 
-	SqmObjectList<SqmClass> patchClasses = sqmObjects->getClass(QStringLiteral("CfgPatches"))->onlyClasses();
+	SqmObjectList<SqmClass> patchClasses = sqmObjects->getClassIgnoreCase(QStringLiteral("CfgPatches"))->onlyClasses();
 	QStringList result;
 	for (auto it = patchClasses.begin(), end = patchClasses.end(); it != end; ++it) {
 		result.append((*it)->getName());
@@ -161,6 +146,9 @@ int main(int argc, char *argv[]) {
 	QStringList pboFiles = scanDirectoryForPbos(args.at(0));
 	QStringList modNames;
 	std::cout << "Found " << pboFiles.size() << " PBO files." << std::endl;
+
+	std::size_t errorCount = 0;
+	std::size_t successCount = 0;
 	for (int i = 0; i < pboFiles.size(); ++i) {
 		try {
 			QStringList const subModNames = extractModNamesFromPbo(pboFiles.at(i));
@@ -168,20 +156,15 @@ int main(int argc, char *argv[]) {
 			for (int i = 0; i < subModNames.size(); ++i) {
 				std::cout << "Found mod with name '" << subModNames.at(i).toStdString() << "'." << std::endl;
 			}
+			++successCount;
 		} catch (zeusops::exceptions::FormatErrorExceptionImpl const& e) {
 			// Ignore for now.
+			++errorCount;
 			std::cerr << "Ignoring file '" << pboFiles.at(i).toStdString() << "' due to parsing exception: " << e.what() << std::endl;
 		}
 	}
-	std::cout << "Found a total of " << modNames.size() << " mods." << std::endl;
+	std::cout << "Found a total of " << modNames.size() << " mods (successfully parsed " << successCount << " PBOs, failed on " << errorCount << ")." << std::endl;
 
 	std::cout << "Bye bye!" << std::endl;
     return 0;
 }
-
-/*#ifdef _MSC_VER
-int __stdcall WinMain(struct HINSTANCE__ *hInstance, struct HINSTANCE__ *hPrevInstance, char *lpszCmdLine, int nCmdShow) {
-	return main(__argc, __argv);
-}
-
-#endif*/

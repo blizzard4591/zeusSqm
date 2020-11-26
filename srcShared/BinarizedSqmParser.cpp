@@ -8,6 +8,7 @@
 
 #include "SqmDeleteClass.h"
 #include "SqmExternClass.h"
+#include "SqmInt64Property.h"
 
 #include "TextualSqmParser.h"
 #include "exceptions/FormatErrorException.h"
@@ -51,6 +52,18 @@ qint32 BinarizedSqmParser::parseInt32(QByteArray const& data, int& offset) {
 quint32 BinarizedSqmParser::parseUInt32(QByteArray const& data, int& offset) {
 	quint32 result = *reinterpret_cast<quint32 const*>(data.constData() + offset);
 	offset += 4;
+	return result;
+}
+
+qint64 BinarizedSqmParser::parseInt64(QByteArray const& data, int& offset) {
+	qint64 result = *reinterpret_cast<qint64 const*>(data.constData() + offset);
+	offset += 8;
+	return result;
+}
+
+quint64 BinarizedSqmParser::parseUInt64(QByteArray const& data, int& offset) {
+	quint64 result = *reinterpret_cast<quint64 const*>(data.constData() + offset);
+	offset += 8;
 	return result;
 }
 
@@ -110,7 +123,7 @@ SqmArrayContents::ArrayEntry BinarizedSqmParser::parseArrayElement(QByteArray co
 		return SqmArrayContents::ArrayEntry(parseArrayContents(data, offset));
 	}
 	default:
-		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled Type '" << (int)type << "' in Array at offset " << offset << "!");
+		throw zeusops::exceptions::FormatErrorException() << "Unhandled Type '" << (int)type << "' in Array at offset " << offset << "!";
 	}
 }
 
@@ -131,7 +144,7 @@ std::shared_ptr<SqmArray> BinarizedSqmParser::parseArray(QByteArray const& data,
 std::shared_ptr<SqmArrayWithFlags> BinarizedSqmParser::parseArrayWithFlags(QByteArray const& data, int& offset) {
 	quint32 const flags = parseUInt32(data, offset);
 	if (flags != 1) {
-		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled flags '" << (int)flags << "' in Array at offset " << offset << "!");
+		throw zeusops::exceptions::FormatErrorException() << "Unhandled flags '" << (int)flags << "' in Array at offset " << offset << "!";
 	}
 
 	QString const name = parseString(data, offset);
@@ -146,7 +159,7 @@ std::shared_ptr<SqmStructure> BinarizedSqmParser::parseClassEntry(QByteArray con
 		QString const className = parseString(data, offset);
 		int classOffset = parseUInt32(data, offset);
 		if (classOffset >= data.size()) {
-			LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Invalid class body offset '" << classOffset << "' in class '" << className.toStdString() <<"' et " << offset << "!");
+			throw zeusops::exceptions::FormatErrorException() << "Invalid class body offset '" << classOffset << "' in class '" << className.toStdString() <<"' et " << offset << "!";
 		}
 		return std::make_shared<SqmClass>(className, parseClassBody(data, classOffset));
 	}
@@ -175,8 +188,14 @@ std::shared_ptr<SqmStructure> BinarizedSqmParser::parseClassEntry(QByteArray con
 			qint32 const value = parseInt32(data, offset);
 			return std::make_shared<SqmIntProperty>(propertyName, value);
 		}
+		case 6:
+		{
+			// Long Long
+			qint64 const value = parseInt64(data, offset);
+			return std::make_shared<SqmInt64Property>(propertyName, value);
+		}
 		default:
-			LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled SubId '" << (int)subId << "' in ClassEntry at offset " << offset << "!");
+			throw zeusops::exceptions::FormatErrorException() << "Unhandled SubId '" << (int)subId << "' in ClassEntry at offset " << offset << "!";
 		}
 		break;
 	}
@@ -204,7 +223,7 @@ std::shared_ptr<SqmStructure> BinarizedSqmParser::parseClassEntry(QByteArray con
 	}
 	default:
 	{
-		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Unhandled ClassEntry ID '" << (int)id << "' in ClassEntry at offset " << offset << "!");
+		throw zeusops::exceptions::FormatErrorException() << "Unhandled ClassEntry ID '" << (int)id << "' in ClassEntry at offset " << offset << "!";
 	}
 	}
 }
@@ -231,7 +250,7 @@ SqmObjectList<SqmStructure> BinarizedSqmParser::parse(QByteArray& input) const {
 	auto t1 = std::chrono::high_resolution_clock::now();
 
 	if (!hasBinarizedSqmHeader(input)) {
-		LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Header of SQM file corrupted, either this is not a binarized SQM or its broken.");
+		throw zeusops::exceptions::FormatErrorException() << "Header of SQM file corrupted, either this is not a binarized SQM or its broken.";
 	}
 
 	// Skip first 4 bytes (header)

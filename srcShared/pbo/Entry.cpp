@@ -30,8 +30,8 @@ namespace PBO {
 	}
 
 	void Entry::set_path(QByteArray const& path) {
-		if (path.length() > ENTRY_PATH_LEN)
-			throw std::length_error("Invalid path length");
+		//if (path.length() > ENTRY_PATH_LEN)
+		//	throw std::length_error("Invalid path length:");
 
 		m_path = QString::fromUtf8(path);
 		m_pathAsBytes = path.left(path.size() - 1);

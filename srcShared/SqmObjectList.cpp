@@ -11,7 +11,7 @@
 #include <memory>
 
 template <typename T>
-SqmObjectList<T>::SqmObjectList(QString const& inheritedClassName, std::vector<std::shared_ptr<T>> const& objects) : m_inheritedClassName(inheritedClassName), m_objects(objects), m_nameToObject(createNameToObjectMapping(objects)) {
+SqmObjectList<T>::SqmObjectList(QString const& inheritedClassName, std::vector<std::shared_ptr<T>> const& objects) : m_inheritedClassName(inheritedClassName), m_objects(objects), m_nameToObject(createNameToObjectMapping(objects)), m_nameLowerToObject(createNameLowerToObjectMapping(objects)) {
 	//
 }
 
@@ -134,6 +134,15 @@ T* SqmObjectList<T>::getByName(QString const& name) const {
 }
 
 template <typename T>
+T* SqmObjectList<T>::getByNameIgnoreCase(QString const& name) const {
+	QString const lowerName = name.toLower();
+	if (m_nameLowerToObject.contains(lowerName)) {
+		return m_nameLowerToObject.constFind(lowerName)->get();
+	}
+	return nullptr;
+}
+
+template <typename T>
 std::size_t SqmObjectList<T>::size() const {
 	return m_objects.size();
 }
@@ -160,6 +169,15 @@ QHash<QString, std::shared_ptr<T>> SqmObjectList<T>::createNameToObjectMapping(s
 	QHash<QString, std::shared_ptr<T>> result;
 	for (std::size_t i = 0; i < objects.size(); ++i) {
 		result.insert(objects.at(i)->getName(), objects.at(i));
+	}
+	return result;
+}
+
+template <typename T>
+QHash<QString, std::shared_ptr<T>> SqmObjectList<T>::createNameLowerToObjectMapping(std::vector<std::shared_ptr<T>> const& objects) {
+	QHash<QString, std::shared_ptr<T>> result;
+	for (std::size_t i = 0; i < objects.size(); ++i) {
+		result.insert(objects.at(i)->getName().toLower(), objects.at(i));
 	}
 	return result;
 }
@@ -262,6 +280,22 @@ SqmClass* SqmObjectList<T>::getClass(QString const& name) const {
 }
 
 template <typename T>
+bool SqmObjectList<T>::hasClassIgnoreCase(QString const& name) const {
+	SqmClass* const c = dynamic_cast<SqmClass*>(getByNameIgnoreCase(name));
+	return (c != nullptr);
+}
+
+template <typename T>
+SqmClass* SqmObjectList<T>::getClassIgnoreCase(QString const& name) const {
+	SqmClass* const c = dynamic_cast<SqmClass*>(getByNameIgnoreCase(name));
+	if (c == nullptr) {
+		throw;
+	}
+
+	return c;
+}
+
+template <typename T>
 bool SqmObjectList<T>::hasArray(QString const& name) const {
 	SqmArray* const array = dynamic_cast<SqmArray*>(getByName(name));
 	return (array != nullptr);
@@ -270,6 +304,22 @@ bool SqmObjectList<T>::hasArray(QString const& name) const {
 template <typename T>
 SqmArray* SqmObjectList<T>::getArray(QString const& name) const {
 	SqmArray* const array = dynamic_cast<SqmArray*>(getByName(name));
+	if (array == nullptr) {
+		throw;
+	}
+
+	return array;
+}
+
+template <typename T>
+bool SqmObjectList<T>::hasArrayIgnoreCase(QString const& name) const {
+	SqmArray* const array = dynamic_cast<SqmArray*>(getByNameIgnoreCase(name));
+	return (array != nullptr);
+}
+
+template <typename T>
+SqmArray* SqmObjectList<T>::getArrayIgnoreCase(QString const& name) const {
+	SqmArray* const array = dynamic_cast<SqmArray*>(getByNameIgnoreCase(name));
 	if (array == nullptr) {
 		throw;
 	}

@@ -24,6 +24,7 @@ public:
 
 	std::vector<std::shared_ptr<T>> const& getObjects() const;
 	T* getByName(QString const& name) const;
+	T* getByNameIgnoreCase(QString const& name) const;
 	std::size_t size() const;
 
 	typename std::vector<std::shared_ptr<T>>::const_iterator begin() const;
@@ -41,9 +42,13 @@ public:
 
 	bool hasClass(QString const& name) const;
 	SqmClass* getClass(QString const& name) const;
+	bool hasClassIgnoreCase(QString const& name) const;
+	SqmClass* getClassIgnoreCase(QString const& name) const;
 
 	bool hasArray(QString const& name) const;
 	SqmArray* getArray(QString const& name) const;
+	bool hasArrayIgnoreCase(QString const& name) const;
+	SqmArray* getArrayIgnoreCase(QString const& name) const;
 
 	QByteArray toBinarizedSqm() const;
 	virtual void toSqmStageOne(QByteArray& output, QHash<SqmStructure const*, int>& stageTwoOffsetMap) const override;
@@ -68,8 +73,10 @@ private:
 	QString const m_inheritedClassName;
 	std::vector<std::shared_ptr<T>> const m_objects;
 	QHash<QString, std::shared_ptr<T>> const m_nameToObject;
+	QHash<QString, std::shared_ptr<T>> const m_nameLowerToObject;
 
 	static QHash<QString, std::shared_ptr<T>> createNameToObjectMapping(std::vector<std::shared_ptr<T>> const& objects);
+	static QHash<QString, std::shared_ptr<T>> createNameLowerToObjectMapping(std::vector<std::shared_ptr<T>> const& objects);
 };
 
 typedef std::shared_ptr<SqmObjectList<SqmStructure>> SqmRoot;

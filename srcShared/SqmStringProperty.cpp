@@ -19,6 +19,10 @@ qint32 SqmStringProperty::getValueAsInt() const {
 	throw;
 }
 
+qint64 SqmStringProperty::getValueAsInt64() const {
+	throw;
+}
+
 float SqmStringProperty::getValueAsFloat() const {
 	throw;
 }
