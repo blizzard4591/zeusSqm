@@ -57,7 +57,7 @@ namespace PBO {
 		void set_timestamp(uint32_t timestamp);
 		uint32_t get_timestamp() const;
 		void set_data_size(uint32_t data_size);
-		int get_data_size() const;
+		uint32_t get_data_size() const;
 		void set_data_offset(std::streampos data_offset);
 		std::streampos get_data_offset() const;
 		Properties& get_properties();

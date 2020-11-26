@@ -12,7 +12,12 @@
 #define SIGNATURE_BUFFER_SIZE		1024
 #define HEADER_ENTRY_DEFAULT_SIZE	21
 
+#include <QtGlobal>
+#if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
+#define SHA_DIGEST_LENGTH 20
+#else
 #define SHA_DIGEST_LENGTH QCryptographicHash::hashLength(QCryptographicHash::Sha1)
+#endif
 
 //#define DEBUG_TIMERS 1
 //#define DEBUG_SAVE_FILES_AROUND_COMPRESSION
@@ -474,19 +479,17 @@ namespace PBO {
 		return **m_path_to_lowerCaseEntry_map.constFind(QString::fromUtf8(path).toLower());
 	}
 
-	QByteArray PBO::read_file(QByteArray const& path, bool quiet) const {
+	QByteArray PBO::read_file_from_entry(Entry const& entry, QByteArray const& path, bool quiet) const {
 #ifdef DEBUG_TIMERS
-		auto t1 = std::chrono::high_resolution_clock::now();
+		auto const t1 = std::chrono::high_resolution_clock::now();
 #endif
 		QByteArray result;
-		Entry const& entry = get_file(path);
 
 		auto const size = entry.get_data_size();
 		auto const originalSize = entry.get_original_size();
 		auto const offset = entry.get_data_offset();
 
 		if (size > 0) {
-			auto const& outfilename = entry.get_path_as_bytes();
 			QFile input(m_path);
 			if (!input.open(QFile::ReadOnly)) {
 				throw zeusops::exceptions::FormatErrorException() << "Failed to open input PBO archive for entry extraction, is the file still there?";
@@ -501,7 +504,7 @@ namespace PBO {
 
 			if (entry.get_packing_method() == PackingMethod::Compressed || ((originalSize != 0) && (originalSize != size))) {
 #ifdef DEBUG_TIMERS
-				auto t1B = std::chrono::high_resolution_clock::now();
+				auto const t1B = std::chrono::high_resolution_clock::now();
 #endif
 				QByteArray const fileChecksumData = result.right(4);
 				uint32_t const fileChecksum = *reinterpret_cast<uint32_t const*>(fileChecksumData.constData());
@@ -527,8 +530,8 @@ namespace PBO {
 				}
 
 #ifdef DEBUG_TIMERS
-				auto t2B = std::chrono::high_resolution_clock::now();
-				auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2B - t1B).count();
+				auto const t2B = std::chrono::high_resolution_clock::now();
+				auto const duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2B - t1B).count();
 				std::cout << "Uncompressing file took " << duration << "ms." << std::endl;
 #endif
 			}
@@ -537,87 +540,28 @@ namespace PBO {
 				std::cout << "Loaded '" << path.toStdString() << "' (" << result.size() << " Bytes) from PBO '" << m_path.toStdString() << "'." << std::endl;
 			}
 		}
-		
+
 #ifdef DEBUG_TIMERS
-		auto t2 = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+		auto const t2 = std::chrono::high_resolution_clock::now();
+		auto const duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 		std::cout << "Getting file from PBO took " << duration << "ms." << std::endl;
 #endif
 
 		return result;
 	}
 
+	QByteArray PBO::read_file(QByteArray const& path, bool quiet) const {
+		QByteArray result;
+		Entry const& entry = get_file(path);
+
+		return read_file_from_entry(entry, path, quiet);
+	}
+
 	QByteArray PBO::read_file_ignore_case(QByteArray const& path, bool quiet) const {
-#ifdef DEBUG_TIMERS
-		auto t1 = std::chrono::high_resolution_clock::now();
-#endif
 		QByteArray result;
 		Entry const& entry = get_file_ignore_case(path);
 
-		auto const size = entry.get_data_size();
-		auto const originalSize = entry.get_original_size();
-		auto const offset = entry.get_data_offset();
-
-		if (size > 0) {
-			auto const& outfilename = entry.get_path_as_bytes();
-			QFile input(m_path);
-			if (!input.open(QFile::ReadOnly)) {
-				throw zeusops::exceptions::FormatErrorException() << "Failed to open input PBO archive for entry extraction, is the file still there?";
-			}
-			input.skip(offset);
-			result = input.read(size);
-			input.close();
-#ifdef DEBUG_SAVE_FILES_AROUND_COMPRESSION
-			// Debug
-			QByteArray const debug = result;
-#endif
-
-			if (entry.get_packing_method() == PackingMethod::Compressed || ((originalSize != 0) && (originalSize != size))) {
-#ifdef DEBUG_TIMERS
-				auto t1B = std::chrono::high_resolution_clock::now();
-#endif
-				QByteArray const fileChecksumData = result.right(4);
-				uint32_t const fileChecksum = *reinterpret_cast<uint32_t const*>(fileChecksumData.constData());
-				result = uncompress(result, originalSize);
-
-				uint32_t checksum = 0;
-				for (int i = 0; i < result.size(); ++i) {
-					checksum += (unsigned char)result.at(i);
-				}
-
-				if (checksum != fileChecksum) {
-					throw zeusops::exceptions::FormatErrorException() << "Failed to properly unpack file: Signature error!";
-#ifdef DEBUG_SAVE_FILES_AROUND_COMPRESSION
-					QFile out(QString(path).replace('/', "") + "_orig.bin");
-					out.open(QFile::WriteOnly);
-					out.write(debug);
-					out.close();
-					out.setFileName(QString(path).replace('/', "") + "_uncom.bin");
-					out.open(QFile::WriteOnly);
-					out.write(result);
-					out.close();
-#endif
-				}
-
-#ifdef DEBUG_TIMERS
-				auto t2B = std::chrono::high_resolution_clock::now();
-				auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2B - t1B).count();
-				std::cout << "Uncompressing file took " << duration << "ms." << std::endl;
-#endif
-			}
-
-			if (!quiet) {
-				std::cout << "Loaded '" << path.toStdString() << "' (" << result.size() << " Bytes) from PBO '" << m_path.toStdString() << "'." << std::endl;
-			}
-		}
-
-#ifdef DEBUG_TIMERS
-		auto t2 = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-		std::cout << "Getting file from PBO took " << duration << "ms." << std::endl;
-#endif
-
-		return result;
+		return read_file_from_entry(entry, path, quiet);
 	}
 
 	PBO::~PBO() {

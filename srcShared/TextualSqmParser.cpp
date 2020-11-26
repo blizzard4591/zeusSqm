@@ -5,6 +5,7 @@
 
 #include <QDataStream>
 #include <QTextStream>
+#include <QVector>
 
 #include "SqmArrayWithFlags.h"
 #include "SqmInt64Property.h"
@@ -306,8 +307,6 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 					std::vector<SqmArrayContents::ArrayEntry> arrayEntries = parseArray(arrayContent, input, offset);
 
 					int const matchLength = posOfClosingBracket + 2 - offset;
-					bool const isMultiLine = input.midRef(offset, matchLength).count(cN) > 0;
-
 					if (isPlusArray) {
 						objects.push_back(std::make_shared<SqmArrayWithFlags>(name, 1, arrayEntries));
 					} else {

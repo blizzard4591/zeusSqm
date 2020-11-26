@@ -81,7 +81,7 @@ namespace PBO {
 		m_data_size = data_size;
 	}
 
-	int Entry::get_data_size() const {
+	uint32_t Entry::get_data_size() const {
 		return m_data_size;
 	}
 

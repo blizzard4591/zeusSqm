@@ -66,6 +66,7 @@ namespace PBO {
 		void write(const char* s, qint64 n);
 		void set_signature(QByteArray const& digest);
 		void set_file_signature(QByteArray const& digest);
+		QByteArray read_file_from_entry(Entry const& entry, QByteArray const& path, bool quiet = false) const;
 	};
 
 }
