@@ -72,11 +72,6 @@ int main(int argc, char *argv[]) {
 
 	QStringList args = parser.positionalArguments();
 	QString sqmFileName = "mission.sqm";
-	if (args.isEmpty()) {
-		args << "mission.sqm";
-	} else {
-		sqmFileName = args.at(0);
-	}
 
 	if (args.isEmpty() || (args.size() < 2 && !parser.isSet(inplaceOption))) {
 		parser.showHelp(EXIT_FAILURE);

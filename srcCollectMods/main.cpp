@@ -22,7 +22,7 @@
 
 QStringList scanDirectoryForPbos(QString const& dirName) {
 	QStringList result;
-	QDirIterator it(dirName, QDirIterator::Subdirectories);
+	QDirIterator it(dirName, QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
 	while (it.hasNext()) {
 		QString const path = it.next();
 		if (path.endsWith(QStringLiteral(".pbo"), Qt::CaseInsensitive)) {
