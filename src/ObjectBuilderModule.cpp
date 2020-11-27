@@ -13,7 +13,7 @@
 
 ObjectBuilderModule::ObjectBuilderModule() :
 	CheckModule(),
-	buildFromImageOption(QStringList() << "buildFromImage", QCoreApplication::translate("main", "Build a 2D structure from an image, where a non-transparent pixel is translated to a block and to air otherwise."), QCoreApplication::translate("main", "path to image")),
+	buildFromImageOption(QStringList() << "buildFromImage", QCoreApplication::translate("main", "Build a 2D structure from an image, where a non-transparent pixel is translated to a block and to air otherwise."), QCoreApplication::translate("main", "path_to_image")),
 	buildMinAlphaValueOption(QStringList() << "buildMinAlpha", QCoreApplication::translate("main", "Minimal alpha channel value for a pixel not to be considered transparent."), QCoreApplication::translate("main", "1-255")),
 	buildPlaneOption(QStringList() << "buildPlane", QCoreApplication::translate("main", "In which plane the structure is constructed."), QCoreApplication::translate("main", "xy, xz or yz")),
 	buildStartingPointOption(QStringList() << "buildStartingPoint", QCoreApplication::translate("main", "Coordinates of where to start building the structure. X, Y and Z can only be integers, no floating points."), QCoreApplication::translate("main", "x,y,z")),

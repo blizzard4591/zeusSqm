@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 	QCommandLineOption inplaceOption(QStringList() << "inplace", QCoreApplication::translate("main", "Do changes inplace, i.e. write to input file. USE WITH CARE."));
 	parser.addOption(inplaceOption);
 
-	QCommandLineOption extractFromPboOption(QStringList() << "extractFromPbo", QCoreApplication::translate("main", "Extract the mission.sqm from PBO file and save it unchanged."), QCoreApplication::translate("main", "extracted mission.sqm"));
+	QCommandLineOption extractFromPboOption(QStringList() << "extractFromPbo", QCoreApplication::translate("main", "Extract the mission.sqm from PBO file and save it unchanged."), QCoreApplication::translate("main", "extracted_file_name"));
 	parser.addOption(extractFromPboOption);
 
 	QCommandLineOption pboFileOption(QStringList() << "pboFile", QCoreApplication::translate("main", "Which file to load/extract from PBO. Default: 'mission.sqm'"));
