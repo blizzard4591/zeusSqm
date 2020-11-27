@@ -12,7 +12,7 @@
 
 AllowedModsCheckModule::AllowedModsCheckModule() :
 	CheckModule(),
-	checkModsOption(QStringList() << "checkMods", QCoreApplication::translate("main", "Check mods list against a whitelist. Tells you if your mission will work with the allowed base set."), QCoreApplication::translate("main", "<whitelist.txt>, listing allowed mods one per line.")),
+	checkModsOption(QStringList() << "checkMods", QCoreApplication::translate("main", "Check mods list against a whitelist. Tells you if your mission will work with the allowed base set. The whitelist should contain one allowed mod per line."), QCoreApplication::translate("main", "whitelist.txt")),
 	dropUnlistedModsOption(QStringList() << "dropUnlistedMods", QCoreApplication::translate("main", "Remove all mods not on the whitelist.")),
 	checkMods(false), allowedMods(), dropUnlistedMods(false)
 {

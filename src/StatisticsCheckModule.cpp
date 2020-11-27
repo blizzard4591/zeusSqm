@@ -9,8 +9,8 @@
 
 StatisticsCheckModule::StatisticsCheckModule() :
 	CheckModule(),
-	setBluforRelationOption(QStringList() << "setBluforVsIndependent", QCoreApplication::translate("main", "Overwrite side relations between BLUFOR and independent"), QCoreApplication::translate("main", "<new relation>, either 'war' or 'peace'")),
-	setOpforRelationOption(QStringList() << "setOpforVsIndependent", QCoreApplication::translate("main", "Overwrite side relations between OPFOR and independent"), QCoreApplication::translate("main", "<new relation>, either 'war' or 'peace'")),
+	setBluforRelationOption(QStringList() << "setBluforVsIndependent", QCoreApplication::translate("main", "Overwrite side relations between BLUFOR and independent. New relation should be either 'war' or 'peace'."), QCoreApplication::translate("main", "new_relation")),
+	setOpforRelationOption(QStringList() << "setOpforVsIndependent", QCoreApplication::translate("main", "Overwrite side relations between OPFOR and independent. New relation should be either 'war' or 'peace'."), QCoreApplication::translate("main", "new_relation")),
 	changeBluforRelation(false), bluforAtWar(false), changeOpforRelation(false), opforAtWar(false)
 {
 	//
