@@ -10,6 +10,7 @@
 #include "SqmArrayWithFlags.h"
 #include "SqmInt64Property.h"
 #include "exceptions/FormatErrorException.h"
+#include "exceptions/InternalErrorException.h"
 
 
 const QChar TextualSqmParser::cR('\r');
@@ -142,9 +143,19 @@ std::vector<SqmArrayContents::ArrayEntry> TextualSqmParser::parseArray(QStringRe
 				QStringRef const arrayContent = trimmed.midRef(subPosOfOpeningBracket + 1, subPosOfClosingBracket - subPosOfOpeningBracket - 1);
 				entry = SqmArrayContents::ArrayEntry(parseArray(arrayContent, input, offset));
 			} else if ((trimmed.indexOf('.') > -1) || (trimmed.compare(QStringLiteral("-0")) == 0)) {
-				entry = SqmArrayContents::ArrayEntry(trimmed.toFloat(), trimmed);
+				bool ok = false;
+				float const f = trimmed.toFloat(&ok);
+				if (!ok) {
+					failureReport("Next input 'NEXT_INPUT' could not be parsed as float (line LINE, offset OFFSET)", input, offset);
+				}
+				entry = SqmArrayContents::ArrayEntry(f, trimmed);
 			} else {
-				entry = SqmArrayContents::ArrayEntry(trimmed.toInt());
+				bool ok = false;
+				int const i = trimmed.toInt(&ok);
+				if (!ok) {
+					failureReport("Next input 'NEXT_INPUT' could not be parsed as int (line LINE, offset OFFSET)", input, offset);
+				}
+				entry = SqmArrayContents::ArrayEntry(i);
 			}
 			arrayEntries.push_back(entry);
 		}
@@ -319,10 +330,6 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 					// Property
 					QString const name = input.mid(offset, (equalPos - equalToNonSpaceOffset) - offset + 1);
 
-					if (name.compare("init") == 0 && offset > 933155) {
-						std::cout << "Here in init." << std::endl;
-					}
-
 					equalToNonSpaceOffset = 1;
 					while ((equalPos + equalToNonSpaceOffset < length) && ((input.at(equalPos + equalToNonSpaceOffset) == cS) || (input.at(equalPos + equalToNonSpaceOffset) == cT))) {
 						++equalToNonSpaceOffset;
@@ -348,7 +355,11 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 					if (value.at(0) == cQuote) {
 						objects.push_back(std::make_shared<SqmStringProperty>(name, SqmStructure::unescapeQuotesInString(value.mid(1, value.size() - 2))));
 					} else if ((value.indexOf('.') > -1) || (value.indexOf('e', 0, Qt::CaseInsensitive) > -1)) {
-						objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
+						try {
+							objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
+						} catch (zeusops::exceptions::InternalErrorExceptionImpl const&) {
+							failureReport("Next input 'NEXT_INPUT' could not be parsed as float (line LINE, offset OFFSET)", input, offset);
+						}
 					} else {
 						bool ok = false;
 						int const i = value.toInt(&ok);						
@@ -357,7 +368,11 @@ std::vector<std::shared_ptr<SqmStructure>> TextualSqmParser::parse(QString const
 							qint64 const iL = value.toLongLong(&ok);
 							if (!ok) {
 								// Fall back to float for big numbers
-								objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
+								try {
+									objects.push_back(std::make_shared<SqmFloatProperty>(name, value));
+								} catch (zeusops::exceptions::InternalErrorExceptionImpl const&) {
+									failureReport("Next input 'NEXT_INPUT' could not be parsed as float (line LINE, offset OFFSET)", input, offset);
+								}
 							}
 							objects.push_back(std::make_shared<SqmInt64Property>(name, iL));
 						} else {

@@ -93,37 +93,15 @@ int main(int argc, char *argv[]) {
 		try {
 			pbo_file.unpack();
 
-			bool foundMission = false;
-			for (auto entry : pbo_file) {
-				auto size = entry->get_data_size();
-				auto offset = entry->get_data_offset();
-
-				if (size > 0) {
-					auto outfilename = entry->get_path();
-					if (outfilename != sqmFileName) {
-						continue;
-					}
-
-					foundMission = true;
-					QFile input(inputFilename);
-					if (!input.open(QFile::ReadOnly)) {
-						LOG_AND_THROW(zeusops::exceptions::FormatErrorException, "Could not open '" << inputFilename.toStdString() << "' for reading, is the archive still there?");
-					}
-					input.skip(offset);
-					missionBinaryData = input.readAll();
-					input.close();
-
-					std::cout << "Loaded '" << sqmFileName.toStdString() << "' (" << size << " Bytes) from PBO." << std::endl;
-					break;
-				}
-			}
-
-			if (!foundMission) {
+			QByteArray const fileNameBytes = sqmFileName.toUtf8();
+			if (!pbo_file.has_file_ignore_case(fileNameBytes)) {
 				std::cerr << "Could not locate '" << sqmFileName.toStdString() << "' in PBO, is the archive complete?" << std::endl;
 				return EXIT_FAILURE;
 			}
+
+			missionBinaryData = pbo_file.read_file_ignore_case(fileNameBytes);
 		} catch (std::exception const& e) {
-			std::cerr << "pbounpack : " << e.what() << std::endl;
+			std::cerr << "Failed to read PBO file '" << inputFilename.toStdString() << "': " << e.what() << std::endl;
 			return EXIT_FAILURE;
 		}
 	} else {
@@ -167,19 +145,24 @@ int main(int argc, char *argv[]) {
 	bool const isBinarized = BinarizedSqmParser::hasBinarizedSqmHeader(missionBinaryData);
 	SqmStructure::FormatType textualFormat = SqmStructure::FormatType::NOSPACE;
 	std::shared_ptr<SqmObjectList<SqmStructure>> sqmObjects;
-	if (isBinarized) {
-		BinarizedSqmParser sqmParser;
-		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionBinaryData));
-	} else {
-		QTextStream stream(missionBinaryData);
-		stream.setCodec("UTF-8");
-		QString const missionFileData = stream.readAll();
+	try {
+		if (isBinarized) {
+			BinarizedSqmParser sqmParser;
+			sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionBinaryData));
+		} else {
+			QTextStream stream(missionBinaryData);
+			stream.setCodec("UTF-8");
+			QString const missionFileData = stream.readAll();
 
-		// Check if the input used Linux-style \n newlines.
-		useSimpleNewline = missionFileData.count("\r\n") == 0;
-		TextualSqmParser sqmParser;
-		sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
-		textualFormat = sqmParser.getFormat(missionFileData);
+			// Check if the input used Linux-style \n newlines.
+			useSimpleNewline = missionFileData.count("\r\n") == 0;
+			TextualSqmParser sqmParser;
+			sqmObjects = std::make_shared<SqmObjectList<SqmStructure>>(sqmParser.parse(missionFileData));
+			textualFormat = sqmParser.getFormat(missionFileData);
+		}
+	} catch (zeusops::exceptions::FormatErrorExceptionImpl const& e) {
+		std::cerr << "Failed to parse mission file: " << e.what() << std::endl;
+		return 1;
 	}
 	
 	if (!parser.isSet(dontTouchJustExtractOption)) {

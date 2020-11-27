@@ -11,7 +11,7 @@ SqmFloatProperty::SqmFloatProperty(QString const& name, QString const& value) : 
 	bool ok = false;
 	float const f = value.toDouble(&ok); // See https://bugreports.qt.io/browse/QTBUG-88371
 	if (!ok) {
-		LOG_AND_THROW(zeusops::exceptions::InternalErrorException, "Failed to parse value '" << value.toStdString() << "' in field '" << name.toStdString() << "' into float!");
+		throw zeusops::exceptions::InternalErrorException() << "Failed to parse value '" << value.toStdString() << "' in field '" << name.toStdString() << "' into float!";
 	}
 }
 
