@@ -169,6 +169,8 @@ int main(int argc, char *argv[]) {
 	auto const duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 	std::cout << "Found a total of " << modNames.size() << " mods (successfully parsed " << successCount << " PBOs in " << duration << "ms, failed on " << errorCount << ")." << std::endl;
 
+	modNames.sort(Qt::CaseInsensitive);
+
 	QFile output(args.at(1));
 	if (!output.open(QFile::WriteOnly | QIODevice::Text)) {
 		std::cerr << "Failed to open given output file '" << args.at(1).toStdString() << "'! Can not write list." << std::endl;
