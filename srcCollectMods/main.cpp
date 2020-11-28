@@ -14,6 +14,7 @@
 
 #include "BinarizedSqmParser.h"
 #include "TextualSqmParser.h"
+#include "exceptions/ConfigNotFoundException.h"
 #include "exceptions/FormatErrorException.h"
 
 #include "pbo/Pbo.h"
@@ -84,7 +85,7 @@ QByteArray loadConfigFromPbo(QString const& pboFileName) {
 
 		return configCpp;
 	} else {
-		throw zeusops::exceptions::FormatErrorException() << "Could not locate '" << searchFileNameBin.toStdString() << "' or '" << searchFileNameTxt.toStdString() << "' in PBO '" << pboFileName.toStdString() << "', is the archive complete?";
+		throw zeusops::exceptions::ConfigNotFoundException() << "Could not locate '" << searchFileNameBin.toStdString() << "' or '" << searchFileNameTxt.toStdString() << "' in PBO '" << pboFileName.toStdString() << "', is the archive complete?";
 	}
 }
 
@@ -159,8 +160,10 @@ int main(int argc, char *argv[]) {
 				std::cout << "Found mod with name '" << subModNames.at(i).toStdString() << "'." << std::endl;
 			}
 			++successCount;
+		} catch (zeusops::exceptions::ConfigNotFoundExceptionImpl const&) {
+			++errorCount;
+			std::cerr << "No config found in '" << pboFiles.at(i).toStdString() << "', ignoring." << std::endl;
 		} catch (zeusops::exceptions::FormatErrorExceptionImpl const& e) {
-			// Ignore for now.
 			++errorCount;
 			std::cerr << "Ignoring file '" << pboFiles.at(i).toStdString() << "' due to parsing exception: " << e.what() << std::endl;
 		}
