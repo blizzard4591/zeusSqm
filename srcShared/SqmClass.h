@@ -19,6 +19,7 @@ public:
 	virtual QString const& getName() const override;
 	virtual std::shared_ptr<SqmStructure> rename(QString const& newName) const override;
 
+	SqmRoot add(std::shared_ptr<SqmStructure> const& object, SqmRoot const& root) const;
 	SqmRoot insertClassItemsWithItemCountIncrement(std::vector<SqmObjectList<SqmStructure>> const& objects, SqmRoot const& root) const;
 	SqmRoot removeClassItemsWithItemCountDecrement(QSet<SqmStructure const*> const& objectsToBeRemoved, SqmRoot const& root) const;
 

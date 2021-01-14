@@ -199,7 +199,7 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 
 		auto t2 = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-		std::cout << "Building your object into the map took " << duration << "ms." << std::endl;
+		std::cout << "Building your object (count = " << addedObjectCount << ") into the map took " << duration << "ms." << std::endl;
 	}
 
 	if (buildPyramid) {
@@ -232,7 +232,7 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 
 		auto t2 = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-		std::cout << "Building your object into the map took " << duration << "ms." << std::endl;
+		std::cout << "Building your object (count = " << addedObjectCount << ") into the map took " << duration << "ms." << std::endl;
 	}
 
 	if (buildMaze) {
@@ -249,29 +249,31 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 		t1 = std::chrono::high_resolution_clock::now();
 
 		std::size_t addedObjectCount = 0;
-		std::vector<SqmHandling::FloatPosition> positions;
+		std::vector<SqmHandling::Position> positions;
 		for (int w = 0; w < maze.getWidth(); ++w) {
 			for (int h = 0; h < maze.getHeight(); ++h) {
 				Maze::Cell const& c = maze.getCell(w, h);
 				if (c == Maze::Cell::Blocked) {
 					for (int height = 0; height < mazeHedgeHeight; ++height) {
-						for (int scale = 0; scale < mazeScale; ++scale) {
-							float const x = startingPosition[0] + (w * mazeScale) + scale;
-							float const y = startingPosition[1] + (h * mazeScale) + scale;
-							float const z = startingPosition[2] + height;
-							positions.push_back({ x, y, z });
-							++addedObjectCount;
+						for (int scaleX = 0; scaleX < mazeScale; ++scaleX) {
+							for (int scaleY = 0; scaleY < mazeScale; ++scaleY) {
+								int const x = startingPosition[0] + (w * mazeScale) + scaleX;
+								int const y = startingPosition[1] + (h * mazeScale) + scaleY;
+								int const z = startingPosition[2] + height;
+								positions.push_back({ x, y, z });
+								++addedObjectCount;
+							}
 						}
 					}
 				}
 			}
 		}
 
-		root = SqmHandling::addObjects(root, objectType, positions);
+		root = SqmHandling::addVrShapeObjects(root, positions);
 
 		t2 = std::chrono::high_resolution_clock::now();
 		duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-		std::cout << "Building your object into the map took " << duration << "ms." << std::endl;
+		std::cout << "Building your object (count = " << addedObjectCount << ") into the map took " << duration << "ms." << std::endl;
 	}
 
 	return root;

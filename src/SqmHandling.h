@@ -26,6 +26,7 @@ public:
 	};
 
 	static SqmRoot nextItemIds(SqmRoot const& root, int& firstNextId, int requestedIdCount = 1);
+	static SqmRoot nextLayerIds(SqmRoot const& root, int& firstNextId, int requestedIdCount = 1);
 	static SqmRoot addVrShapeObjects(SqmRoot const& root, std::vector<Position> const& positions);
 	static SqmRoot addObjects(SqmRoot const& root, QString const& name, std::vector<FloatPosition> const& positions);
 

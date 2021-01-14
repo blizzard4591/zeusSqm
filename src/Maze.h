@@ -51,17 +51,29 @@ private:
 	std::vector<Position> m_path;
 
 	int coordToIndex(Position const& p) const;
+	int coordToIndex(int w, int h) const;
 
 	bool isLegal(Position const& p) const;
+	bool isLegal(int w, int h) const;
 	std::set<Position> getFrontier(Position const& p) const;
 	void addFrontier(std::set<Position>& frontier, Position const& p) const;
-	std::vector<Position> getNeighbor(Position const& p) const;
+	void addFrontierSub(std::set<Position>& frontier, int w, int h) const;
+	void getNeighbors(std::vector<Position>& neighbors, Position const& p) const;
+	void getNeighborsSub(std::vector<Position>& result, int w, int h) const;
 	bool connectRandomNeighbor(Position const& p);
 	Position between(Position const& p1, Position const& p2) const;
 	void extend(std::set<Position>& frontier);
 
 	std::vector<Position> findPath(Position const& from, Position const& to) const;
 	void markPath();
+
+	int getRandomNumber(int min, int max);
+
+	enum class Direction {
+		LEFT, RIGHT, TOP, BOTTOM
+	};
+
+	int getIndexOfFirstNonBlackRow(Direction dir) const;
 };
 
 #endif

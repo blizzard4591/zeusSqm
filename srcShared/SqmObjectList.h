@@ -66,6 +66,8 @@ public:
 
 	std::shared_ptr<SqmObjectList<T>> replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, std::shared_ptr<SqmObjectList<T>> const& current) const;
 	std::shared_ptr<SqmObjectList<T>> remove(SqmStructure const& old, std::shared_ptr<SqmObjectList<T>> const& current) const;
+
+	void debugPrintProperties() const;
 protected:
 	std::vector<std::shared_ptr<T>> replace(SqmStructure const& old, std::shared_ptr<SqmStructure> const& newStructure, bool& didChange) const;
 	std::vector<std::shared_ptr<T>> remove(SqmStructure const& old, bool& didChange) const;

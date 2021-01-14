@@ -254,6 +254,23 @@ std::shared_ptr<SqmStringProperty> SqmObjectList<T>::getStringProperty(QString c
 }
 
 template <typename T>
+void SqmObjectList<T>::debugPrintProperties() const {
+	auto it = m_nameToObject.constBegin();
+	for (; it != m_nameToObject.constEnd(); ++it) {
+		QString const& name = it.key();
+		std::shared_ptr<T> const& value = it.value();
+		QString type = "";
+		if (dynamic_cast<SqmClass*>(value.get()) != nullptr) { type = QStringLiteral("SqmClass"); }
+		else if(dynamic_cast<SqmArray*>(value.get()) != nullptr) { type = QStringLiteral("SqmArray"); }
+		else if (dynamic_cast<SqmFloatProperty*>(value.get()) != nullptr) { type = QStringLiteral("SqmFloatProperty"); }
+		else if (dynamic_cast<SqmIntProperty*>(value.get()) != nullptr) { type = QStringLiteral("SqmIntProperty"); }
+		else if (dynamic_cast<SqmStringProperty*>(value.get()) != nullptr) { type = QStringLiteral("SqmStringProperty"); }
+		else { type = QStringLiteral("unknown"); }
+		std::cout << name.toStdString() << " - " << type.toStdString() << std::endl;
+	}
+}
+
+template <typename T>
 QString const& SqmObjectList<T>::getPropertyValueAsString(QString const& name) const {
 	return getStringProperty(name)->getValueAsString();
 }
