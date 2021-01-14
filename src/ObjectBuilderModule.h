@@ -16,11 +16,14 @@ public:
 private:
 	QCommandLineOption buildFromImageOption;
 	QCommandLineOption buildPyramidOption;
+	QCommandLineOption buildMazeOption;
 	QCommandLineOption buildMinAlphaValueOption;
 	QCommandLineOption buildPlaneOption;
 	QCommandLineOption buildStartingPointOption;
 	QCommandLineOption buildPyramidOffsetsOption;
 	QCommandLineOption buildPyramidLayersOption;
+	QCommandLineOption buildMazeHedgeHeightOption;
+	QCommandLineOption buildMazeScalingOption;
 
 	enum class BuildPlane {
 		XY, XZ, YZ
@@ -28,6 +31,7 @@ private:
 
 	bool buildFromImage;
 	bool buildPyramid;
+	bool buildMaze;
 	QString objectType;
 	int minAlphaValue;
 	QImage image;
@@ -35,6 +39,9 @@ private:
 	int startingPosition[3];
 	float pyramidOffsets[3];
 	int pyramidLayers;
+	int mazeDimensions[2];
+	int mazeHedgeHeight;
+	int mazeScale;
 };
 
 #endif
