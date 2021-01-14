@@ -14,19 +14,28 @@
 ObjectBuilderModule::ObjectBuilderModule() :
 	CheckModule(),
 	buildFromImageOption(QStringList() << "buildFromImage", QCoreApplication::translate("main", "Build a 2D structure from an image, where a non-transparent pixel is translated to a block and to air otherwise."), QCoreApplication::translate("main", "path_to_image")),
+	buildPyramidOption(QStringList() << "buildPyramid", QCoreApplication::translate("main", "Build a 3D structure from objects."), QCoreApplication::translate("main", "object_name")),
 	buildMinAlphaValueOption(QStringList() << "buildMinAlpha", QCoreApplication::translate("main", "Minimal alpha channel value for a pixel not to be considered transparent."), QCoreApplication::translate("main", "1-255")),
 	buildPlaneOption(QStringList() << "buildPlane", QCoreApplication::translate("main", "In which plane the structure is constructed."), QCoreApplication::translate("main", "xy, xz or yz")),
 	buildStartingPointOption(QStringList() << "buildStartingPoint", QCoreApplication::translate("main", "Coordinates of where to start building the structure. X, Y and Z can only be integers, no floating points."), QCoreApplication::translate("main", "x,y,z")),
-	buildFromImage(false), minAlphaValue(25), image(), buildPlane(BuildPlane::XY), startingPosition()
+	buildPyramidOffsetsOption(QStringList() << "pyramidOffsets", QCoreApplication::translate("main", "Offsets to be used between placed elements in the three planes. X, Y and Z are floating points."), QCoreApplication::translate("main", "x,y,z")),
+	buildPyramidLayersOption(QStringList() << "pyramidLayers", QCoreApplication::translate("main", "How many layers the pyramid should have."), QCoreApplication::translate("main", "1-255")),
+	buildFromImage(false), buildPyramid(false), objectType(), minAlphaValue(25), image(), buildPlane(BuildPlane::XY), startingPosition(), pyramidOffsets(), pyramidLayers(4)
 {
 	//
+	pyramidOffsets[0] = 0.35f;
+	pyramidOffsets[1] = 0.15f;
+	pyramidOffsets[2] = 0.115f;
 }
 
 void ObjectBuilderModule::registerOptions(QCommandLineParser& parser) {
 	parser.addOption(buildFromImageOption);
+	parser.addOption(buildPyramidOption);
 	parser.addOption(buildMinAlphaValueOption);
 	parser.addOption(buildPlaneOption);
 	parser.addOption(buildStartingPointOption);
+	parser.addOption(buildPyramidOffsetsOption);
+	parser.addOption(buildPyramidLayersOption);
 }
 
 bool ObjectBuilderModule::checkArguments(QCommandLineParser& parser) {
@@ -47,6 +56,11 @@ bool ObjectBuilderModule::checkArguments(QCommandLineParser& parser) {
 			std::cerr << std::endl;
 			return false;
 		}
+	}
+
+	buildPyramid = parser.isSet(buildPyramidOption);
+	if (buildPyramid) {
+		objectType = parser.value(buildPyramidOption);
 	}
 
 	if (parser.isSet(buildMinAlphaValueOption)) {
@@ -89,6 +103,32 @@ bool ObjectBuilderModule::checkArguments(QCommandLineParser& parser) {
 		if (!ok) { std::cerr << "Build starting position '" << buildStartingPointValue.toStdString() << "' was not understood. Format: x,y,z" << std::endl; return false; }
 	}
 
+	if (parser.isSet(buildPyramidOffsetsOption)) {
+		QString const buildPyramidOffsetsValue = parser.value(buildPyramidOffsetsOption);
+		QStringList const parts = buildPyramidOffsetsValue.split(',');
+		if (parts.size() != 3) {
+			std::cerr << "Pyramid offsets '" << buildPyramidOffsetsValue.toStdString() << "' was not understood. Format: x,y,z" << std::endl;
+			return false;
+		}
+		bool ok = false;
+		pyramidOffsets[0] = parts.at(0).toFloat(&ok);
+		if (!ok) { std::cerr << "Pyramid offsets '" << buildPyramidOffsetsValue.toStdString() << "' was not understood. Format: x,y,z" << std::endl; return false; }
+		pyramidOffsets[1] = parts.at(1).toFloat(&ok);
+		if (!ok) { std::cerr << "Pyramid offsets '" << buildPyramidOffsetsValue.toStdString() << "' was not understood. Format: x,y,z" << std::endl; return false; }
+		pyramidOffsets[2] = parts.at(2).toFloat(&ok);
+		if (!ok) { std::cerr << "Pyramid offsets '" << buildPyramidOffsetsValue.toStdString() << "' was not understood. Format: x,y,z" << std::endl; return false; }
+	}
+
+	if (parser.isSet(buildPyramidLayersOption)) {
+		QString const pyramidLayersValue = parser.value(buildPyramidLayersOption);
+		bool ok = false;
+		pyramidLayers = pyramidLayersValue.toInt(&ok);
+		if (!ok || (pyramidLayers < 1) || (pyramidLayers > 255)) {
+			std::cerr << "Pyramid layer count value '" << pyramidLayersValue.toStdString() << "' is out of range. Value must be in 1 - 255." << std::endl;
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -124,6 +164,39 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 			std::cout << std::endl;
 		}
 		root = SqmHandling::addVrShapeObjects(root, positions);
+
+		auto t2 = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+		std::cout << "Building your object into the map took " << duration << "ms." << std::endl;
+	}
+
+	if (buildPyramid) {
+		auto t1 = std::chrono::high_resolution_clock::now();
+
+		int w = image.width();
+		int h = image.height();
+		std::cout << std::endl << "Inserting pyramid into map..." << std::endl;
+
+		std::size_t addedObjectCount = 0;
+		std::vector<SqmHandling::FloatPosition> positions;
+		// +1 for < and easier substraction
+		int const layerCount = pyramidLayers + 1;
+		for (int layer = 0; layer < layerCount; ++layer) {
+			int const countInX = layerCount - layer;
+			int const countInY = layerCount - layer;
+
+			float const stepOverX = pyramidOffsets[0];
+			float const stepOverY = pyramidOffsets[1];
+			float const stepOverZ = pyramidOffsets[2];
+
+			for (int x = 0; x < countInX; ++x) {
+				for (int y = 0; y < countInY; ++y) {
+					positions.push_back({ startingPosition[0] + (x * stepOverX) + (layer * stepOverX * 0.5f), startingPosition[1] + (y * stepOverY) + (layer * stepOverY * 0.5f), startingPosition[2] + (layer * stepOverZ) });
+					++addedObjectCount;
+				}
+			}
+		}
+		root = SqmHandling::addObjects(root, objectType, positions);
 
 		auto t2 = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();

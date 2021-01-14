@@ -19,11 +19,19 @@ public:
 		int z;
 	};
 
+	struct FloatPosition {
+		float x;
+		float y;
+		float z;
+	};
+
 	static SqmRoot nextItemIds(SqmRoot const& root, int& firstNextId, int requestedIdCount = 1);
 	static SqmRoot addVrShapeObjects(SqmRoot const& root, std::vector<Position> const& positions);
+	static SqmRoot addObjects(SqmRoot const& root, QString const& name, std::vector<FloatPosition> const& positions);
 
 private:
 	static std::shared_ptr<SqmClass> newPosition(int x, int y, int z);
+	static std::shared_ptr<SqmClass> newPosition(float x, float y, float z);
 };
 
 #endif

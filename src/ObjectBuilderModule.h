@@ -15,19 +15,26 @@ public:
 	virtual void registerOptions(QCommandLineParser& parser) override;
 private:
 	QCommandLineOption buildFromImageOption;
+	QCommandLineOption buildPyramidOption;
 	QCommandLineOption buildMinAlphaValueOption;
 	QCommandLineOption buildPlaneOption;
 	QCommandLineOption buildStartingPointOption;
+	QCommandLineOption buildPyramidOffsetsOption;
+	QCommandLineOption buildPyramidLayersOption;
 
 	enum class BuildPlane {
 		XY, XZ, YZ
 	};
 
 	bool buildFromImage;
+	bool buildPyramid;
+	QString objectType;
 	int minAlphaValue;
 	QImage image;
 	BuildPlane buildPlane;
 	int startingPosition[3];
+	float pyramidOffsets[3];
+	int pyramidLayers;
 };
 
 #endif

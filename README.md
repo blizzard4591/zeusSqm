@@ -40,6 +40,13 @@ You have an nice picture like the one shown above and want a festive tree in you
  - `--buildMinAlpha <1 - 255>`: Minimal alpha channel value for a pixel not to be considered transparent.
  - `--buildStartingPoint x,y,z`: Coordinates of where to start building the structure, e.g. `1000,1000,10`.
 
+You want a festive pyramid of stacked gifts in your mission? No problem, `zeusSqm` got you covered:
+ - `--buildPyramid <object_name>`: Build a 3D pyramid from the given object, e.g. `rhsusf_explosive_m112x4`.
+ - `--pyramidLayers <1 - 255>`: Number of layers in the pyramid.
+ - `--pyramidOffsets x,y,z`: The distances between neighboring objects, e.g. `0.35,0.15,0.115`.
+ - `--buildStartingPoint x,y,z`: Coordinates of where to start building the structure, e.g. `1000,1000,10`.
+
+
 Saved your mission with mods loaded that not all players necessarily have?
  - `--checkMods <whitelist.txt>`: Loads whitelisted mods from the given file, one per line. Complains if the mission requires mods outside of these values.
  - `--dropUnlistedMods`: Removes references to non-whitelisted mods from the mission.
