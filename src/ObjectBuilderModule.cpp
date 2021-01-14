@@ -248,17 +248,57 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 		std::cout << std::endl << "Inserting maze into map (" << mazeDimensions[0] << " x " << mazeDimensions[1] << ", height " << mazeHedgeHeight << ", " << mazeScale << " wide paths)..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
 
+		bool const hollow = true && (mazeScale > 1);
+		bool const forceTopLayer = false;
+
 		std::size_t addedObjectCount = 0;
+		std::size_t slicedObjectCount = 0;
 		std::vector<SqmHandling::Position> positions;
 		for (int w = 0; w < maze.getWidth(); ++w) {
 			for (int h = 0; h < maze.getHeight(); ++h) {
 				Maze::Cell const& c = maze.getCell(w, h);
 				if (c == Maze::Cell::Blocked) {
+					// Neighbors, for hollow building
+					bool const hasLeftNeighbor = maze.isLegal(w - 1, h) && (maze.getCell(w - 1, h) == Maze::Cell::Blocked);
+					bool const hasRightNeighbor = maze.isLegal(w + 1, h) && (maze.getCell(w + 1, h) == Maze::Cell::Blocked);
+					bool const hasTopNeighbor = maze.isLegal(w, h - 1) && (maze.getCell(w, h - 1) == Maze::Cell::Blocked);
+					bool const hasBottomNeighbor = maze.isLegal(w, h + 1) && (maze.getCell(w, h + 1) == Maze::Cell::Blocked);
+
 					for (int height = 0; height < mazeHedgeHeight; ++height) {
-						for (int scaleX = 0; scaleX < mazeScale; ++scaleX) {
-							for (int scaleY = 0; scaleY < mazeScale; ++scaleY) {
-								int const x = startingPosition[0] + (w * mazeScale) + scaleX;
-								int const y = startingPosition[1] + (h * mazeScale) + scaleY;
+						bool const isTopLayer = height == (mazeHedgeHeight - 1);
+						for (int scaleW = 0; scaleW < mazeScale; ++scaleW) {
+							bool const isOnLeftWall = scaleW == 0;
+							bool const isOnRightWall = scaleW == (mazeScale - 1);
+							for (int scaleH = 0; scaleH < mazeScale; ++scaleH) {
+								bool const isOnTopWall = scaleH == 0;
+								bool const isOnBottomWall = scaleH == (mazeScale - 1);
+
+								bool skip = true;
+								if (isOnLeftWall && isOnTopWall) {
+									skip = hasLeftNeighbor && hasTopNeighbor;
+								} else if (isOnLeftWall && isOnBottomWall) {
+									skip = hasLeftNeighbor && hasBottomNeighbor;
+								} else if (isOnRightWall && isOnTopWall) {
+									skip = hasRightNeighbor && hasTopNeighbor;
+								} else if (isOnRightWall && isOnBottomWall) {
+									skip = hasRightNeighbor && hasBottomNeighbor;
+								} else if (isOnLeftWall) {
+									skip = hasLeftNeighbor;
+								} else if (isOnRightWall) {
+									skip = hasRightNeighbor;
+								} else if (isOnTopWall) {
+									skip = hasTopNeighbor;
+								} else if (isOnBottomWall) {
+									skip = hasBottomNeighbor;
+								}
+
+								if (skip && hollow && (!isTopLayer || !forceTopLayer)) {
+									++slicedObjectCount;
+									continue;
+								}
+
+								int const x = startingPosition[0] + (w * mazeScale) + scaleW;
+								int const y = startingPosition[1] + (h * mazeScale) + scaleH;
 								int const z = startingPosition[2] + height;
 								positions.push_back({ x, y, z });
 								++addedObjectCount;
@@ -273,7 +313,7 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 
 		t2 = std::chrono::high_resolution_clock::now();
 		duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-		std::cout << "Building your object (count = " << addedObjectCount << ") into the map took " << duration << "ms." << std::endl;
+		std::cout << "Building your object (count = " << addedObjectCount << ", sliced = " << slicedObjectCount << ") into the map took " << duration << "ms." << std::endl;
 	}
 
 	return root;

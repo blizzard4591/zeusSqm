@@ -44,6 +44,7 @@ public:
 	std::size_t getPathLength() const;
 	double getPathAverageDistanceToCenter() const;
 	Cell const& getCell(int w, int h) const;
+	bool isLegal(int w, int h) const;
 private:
 	int const m_width;
 	int const m_height;
@@ -54,7 +55,6 @@ private:
 	int coordToIndex(int w, int h) const;
 
 	bool isLegal(Position const& p) const;
-	bool isLegal(int w, int h) const;
 	std::set<Position> getFrontier(Position const& p) const;
 	void addFrontier(std::set<Position>& frontier, Position const& p) const;
 	void addFrontierSub(std::set<Position>& frontier, int w, int h) const;

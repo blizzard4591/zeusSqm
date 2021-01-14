@@ -5,7 +5,7 @@
 #include "exceptions/FormatErrorException.h"
 
 SqmRoot SqmHandling::addVrShapeObjects(SqmRoot const& root, std::vector<Position> const& positions) {
-	int const maxObjectsPerLayer = 5000;
+	int const maxObjectsPerLayer = 500;
 
 	int nextFreeId = -1;
 	int const objectCount = static_cast<int>(positions.size());
