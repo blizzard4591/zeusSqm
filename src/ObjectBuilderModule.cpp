@@ -151,6 +151,16 @@ bool ObjectBuilderModule::checkArguments(QCommandLineParser& parser) {
 		if (!ok) { std::cerr << "Maze dimensions '" << buildMazeValue.toStdString() << "' was not understood. Format: x,y" << std::endl; return false; }
 	}
 
+	if (parser.isSet(buildMazeHedgeHeightOption)) {
+		QString const mazeHedgeHeightValue = parser.value(buildMazeHedgeHeightOption);
+		bool ok = false;
+		mazeHedgeHeight = mazeHedgeHeightValue.toInt(&ok);
+		if (!ok || (mazeHedgeHeight < 1) || (mazeHedgeHeight > 255)) {
+			std::cerr << "Maze hedge height value '" << mazeHedgeHeightValue.toStdString() << "' is out of range. Value must be in 1 - 255." << std::endl;
+			return false;
+		}
+	}
+
 	if (parser.isSet(buildMazeScalingOption)) {
 		QString const mazeScaleValue = parser.value(buildMazeScalingOption);
 		bool ok = false;
@@ -240,6 +250,7 @@ std::shared_ptr<SqmObjectList<SqmStructure>> ObjectBuilderModule::perform(std::s
 
 		Maze maze(mazeDimensions[0], mazeDimensions[1], true, true, (mazeDimensions[0] + mazeDimensions[1]) * 1.3);
 		maze.print();
+		std::cout << "Path length: " << maze.getPathLength() << "." << std::endl;
 
 		auto t2 = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();

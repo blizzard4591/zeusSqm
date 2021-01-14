@@ -5,7 +5,7 @@
 #include "exceptions/FormatErrorException.h"
 
 SqmRoot SqmHandling::addVrShapeObjects(SqmRoot const& root, std::vector<Position> const& positions) {
-	int const maxObjectsPerLayer = 500;
+	int const maxObjectsPerLayer = 1000;
 
 	int nextFreeId = -1;
 	int const objectCount = static_cast<int>(positions.size());
@@ -77,6 +77,8 @@ SqmRoot SqmHandling::addVrShapeObjects(SqmRoot const& root, std::vector<Position
 			itemContents.push_back(std::make_shared<SqmClass>(QStringLiteral("Attributes"), SqmObjectList<SqmStructure>(QString(), {})));
 			itemContents.push_back(SqmProperty::newIntegerProperty(QStringLiteral("id"), nextFreeId++));
 			itemContents.push_back(SqmProperty::newStringProperty(QStringLiteral("type"), QStringLiteral("Land_VR_Shape_01_cube_1m_F")));
+			itemContents.push_back(attributesWithDisabledSimulation());
+			itemContents.push_back(disabledDamage());
 			preliminaryClassItems.push_back(SqmObjectList<SqmStructure>(QString(), itemContents));
 		}
 
@@ -130,6 +132,24 @@ std::shared_ptr<SqmClass> SqmHandling::newPosition(float x, float y, float z) {
 	return std::make_shared<SqmClass>(QStringLiteral("PositionInfo"), SqmObjectList<SqmStructure>(QString(), { positionArray }));
 }
 
+std::shared_ptr<SqmClass> SqmHandling::attributesWithDisabledSimulation() {
+	return std::make_shared<SqmClass>(QStringLiteral("Attributes"), SqmObjectList<SqmStructure>(QString(), { SqmProperty::newIntegerProperty(QStringLiteral("disableSimulation"), 1) }));
+}
+
+std::shared_ptr<SqmClass> SqmHandling::disabledDamage() {
+	return std::make_shared<SqmClass>(QStringLiteral("CustomAttributes"), SqmObjectList<SqmStructure>(QString(), {
+		std::make_shared<SqmClass>(QStringLiteral("Attribute0"), SqmObjectList<SqmStructure>(QString(), {
+			SqmProperty::newStringProperty(QStringLiteral("property"), QStringLiteral("allowDamage")),
+			SqmProperty::newStringProperty(QStringLiteral("expression"), QStringLiteral("_this allowdamage _value;")),
+			std::make_shared<SqmClass>(QStringLiteral("Value"), SqmObjectList<SqmStructure>(QString(), {
+				std::make_shared<SqmClass>(QStringLiteral("data"), SqmObjectList<SqmStructure>(QString(), {
+					SqmProperty::newStringProperty(QStringLiteral("singleType"), QStringLiteral("BOOL")),
+					SqmProperty::newIntegerProperty(QStringLiteral("value"), 0)
+				}))
+			}))
+		}))
+	}));
+}
 
 SqmRoot SqmHandling::nextItemIds(SqmRoot const& root, int& firstNextId, int requestedIdCount) {
 	if (requestedIdCount < 1) throw;

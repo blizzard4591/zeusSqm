@@ -33,6 +33,8 @@ public:
 private:
 	static std::shared_ptr<SqmClass> newPosition(int x, int y, int z);
 	static std::shared_ptr<SqmClass> newPosition(float x, float y, float z);
+	static std::shared_ptr<SqmClass> attributesWithDisabledSimulation();
+	static std::shared_ptr<SqmClass> disabledDamage();
 };
 
 #endif
