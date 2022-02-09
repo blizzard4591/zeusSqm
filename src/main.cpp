@@ -43,7 +43,10 @@ int main(int argc, char *argv[]) {
 	QCommandLineOption extractFromPboOption(QStringList() << "extractFromPbo", QCoreApplication::translate("main", "Extract the mission.sqm from PBO file and save it unchanged."), QCoreApplication::translate("main", "extracted_file_name"));
 	parser.addOption(extractFromPboOption);
 
-	QCommandLineOption pboFileOption(QStringList() << "pboFile", QCoreApplication::translate("main", "Which file to load/extract from PBO. Default: 'mission.sqm'"));
+	QCommandLineOption extractAllFromPboOption(QStringList() << "extractAllFromPbo", QCoreApplication::translate("main", "Extracts all files from PBO file and saves them unchanged to the output folder."));
+	parser.addOption(extractAllFromPboOption);
+
+	QCommandLineOption pboFileOption(QStringList() << "pboFile", QCoreApplication::translate("main", "Which file to load/extract from PBO. Default: 'mission.sqm'"), QCoreApplication::translate("main", "file_to_extract"));
 	parser.addOption(pboFileOption);
 
 	QCommandLineOption stripCommentsOption(QStringList() << "stripComments", QCoreApplication::translate("main", "Remove comments from SQMs, even from the 'unchanged' extract from PBO."));
@@ -92,6 +95,11 @@ int main(int argc, char *argv[]) {
 
 		try {
 			pbo_file.unpack();
+			
+			if (parser.isSet(extractAllFromPboOption)) {
+				pbo_file.extract_all(args.at(1));
+				return 0;
+			}
 
 			QByteArray const fileNameBytes = sqmFileName.toUtf8();
 			if (!pbo_file.has_file_ignore_case(fileNameBytes)) {

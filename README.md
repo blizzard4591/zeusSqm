@@ -14,9 +14,11 @@ These utilities are governed by the GNU GPL v2.0 license, but includes works fro
  - Extracting a mission.sqm from a PBO to a binarized SQM: `zeusSqm --saveBinarized input.pbo mission.sqm`
  - Converting a binarized SQM to a non-binarized SQM: `zeusSqm binarized.sqm non-binarized.sqm`
  - Converting a non-binarized SQM to a binarized SQM: `zeusSqm --saveBinarized non-binarized.sqm binarized.sqm`
+ - Extracting all files from a PBO to a folder: `zeusSqm input.pbo C:\my_output_folder --extractAllFromPbo`
 
 ## Commandline options
  - `--inplace`: Write output to input file. Use with care.
+ - `--extractAllFromPbo`: Extract all files from a PBO file and save them to the given directory.
  - `--extractFromPbo <name>`: Extract the mission.sqm from PBO file and save it to name, untouched. This is not the option you are looking for, if you just want the file, this is meant for debugging differences between the original input file and the internally produced output.
  - `--stripComments`: Remove comments (lines starting in // and #define) from SQMs, even from the 'unchanged' extract from PBO.
  - `--saveBinarized`: Sets the output SQM file to be binarized. Default is non-binarized.

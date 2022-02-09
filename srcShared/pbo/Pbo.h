@@ -37,6 +37,8 @@ namespace PBO {
 		Entry const& get_file_ignore_case(QByteArray const& path) const;
 		QByteArray read_file(QByteArray const& path, bool quiet = false) const;
 		QByteArray read_file_ignore_case(QByteArray const& path, bool quiet = false) const;
+		QList<QByteArray> getAllPaths() const;
+		bool extract_all(QString const& targetLocation) const;
 
 		void pack();
 		void unpack();

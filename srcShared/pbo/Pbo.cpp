@@ -3,6 +3,7 @@
 #include "exceptions/FormatErrorException.h"
 
 #include <QByteArray>
+#include <QDir>
 #include <QFileInfo>
 
 #include <iostream>
@@ -453,6 +454,66 @@ namespace PBO {
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 		std::cout << "Unpacking PBO took " << duration << "ms." << std::endl;
 #endif
+	}
+
+	QList<QByteArray> PBO::getAllPaths() const {
+		return m_path_to_entry_map.keys();
+	}
+
+	bool PBO::extract_all(QString const& targetLocation) const {
+		QString dir = targetLocation;
+		if (!dir.endsWith('/')) {
+			dir.append('/');
+		}
+		QMapIterator<QByteArray, std::shared_ptr<Entry>> i(m_path_to_entry_map);
+		std::size_t counter = 0;
+		while (i.hasNext()) {
+			i.next();
+			QString pathname = QString::fromUtf8(i.key());
+			if (pathname.isEmpty() || pathname == QStringLiteral("*.*") || pathname == QStringLiteral("\t\t")) {
+				continue;
+			}
+
+			std::cout << "Looking at '" << pathname.toStdString() << "' (" << QString(pathname.toUtf8().toBase64()).toStdString() << ")." << std::endl;
+			bool foundUnicode = false;
+			for (int i = 0; i < pathname.length(); ++i) {
+				QChar c = pathname.at(i);
+				bool isUnicode = c.unicode() > 127;
+				if (isUnicode || !c.isPrint()) {
+					foundUnicode = true;
+					pathname[i] = '_';
+				}
+			}
+			if (foundUnicode) {
+				std::cout << "Sanitized name from '" << QString::fromUtf8(i.key()).toStdString() << "' to '" << pathname.toStdString() << "'." << std::endl;
+			}
+
+			int const pos = pathname.lastIndexOf('\\');
+			QString filename = pathname;
+			QDir d(dir);
+			if (pos != -1) {
+				QString const path = pathname.left(pos);
+				d.mkpath(path);
+				d = QDir(dir + path);
+				filename = pathname.mid(pos + 1);
+			}
+			
+			try {
+				QByteArray const data = read_file_ignore_case(i.key(), true);
+				QFile f(d.absoluteFilePath(filename));
+				if (!f.open(QFile::WriteOnly)) {
+					std::cerr << "Failed to open '" << f.fileName().toStdString() << "' for writing." << std::endl;
+					continue;
+				}
+				f.write(data);
+				f.close();
+				++counter;
+			} catch (std::exception const& ex) {
+				std::cerr << "Failed to extract file '" << QString::fromUtf8(i.key()).toStdString() << "': " << ex.what() << std::endl;
+			}
+		}
+		std::cout << "Extracted " << counter << " files from PBO to '" << targetLocation.toStdString() << "'." << std::endl;
+		return true;
 	}
 
 	bool PBO::has_file(QByteArray const& path) const {
